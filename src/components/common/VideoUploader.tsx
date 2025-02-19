@@ -10,6 +10,59 @@ const VideoUploader: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState<string>('');
   const addElement = useEditorStore((state) => state.addElement);
 
+  const uploadToB2 = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    console.log('Preparando archivo para B2:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    });
+
+    const response = await fetch('https://assets-service-hm83.onrender.com/api/assets/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error respuesta B2:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorText
+      });
+      throw new Error(`Error al subir a B2: ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('Respuesta B2:', data);
+
+    if (!data.url) {
+      throw new Error('No se recibió la URL del archivo');
+    }
+
+    // Verificar que el archivo sea accesible
+    const fileCheck = await fetch(data.url, { method: 'HEAD' });
+    if (!fileCheck.ok) {
+      throw new Error('El archivo subido no es accesible');
+    }
+
+    const contentLength = fileCheck.headers.get('content-length');
+    console.log('Verificación archivo:', {
+      url: data.url,
+      contentLength,
+      contentType: fileCheck.headers.get('content-type')
+    });
+
+    // Verificar que el tamaño coincida aproximadamente (permitiendo una pequeña variación)
+    if (contentLength && Math.abs(parseInt(contentLength) - file.size) > 1024) {
+      throw new Error('El tamaño del archivo subido no coincide con el original');
+    }
+
+    return data.url;
+  };
+
   const verifyVideo = (url: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       const video = document.createElement('video');
@@ -44,7 +97,7 @@ const VideoUploader: React.FC = () => {
       timeoutId = window.setTimeout(() => {
         cleanup();
         reject(new Error('Tiempo de espera agotado al cargar el video'));
-      }, 30000); // 30 segundos de timeout
+      }, 60000); // 60 segundos de timeout
 
       video.src = url;
     });
@@ -55,7 +108,7 @@ const VideoUploader: React.FC = () => {
     
     try {
       setUploading(true);
-      setUploadProgress('Procesando archivo...');
+      setUploadProgress('Validando archivo...');
 
       console.log('Archivo recibido:', {
         name: file.name,
@@ -72,23 +125,9 @@ const VideoUploader: React.FC = () => {
         throw new Error('El archivo debe ser un video.');
       }
 
-      setUploadProgress('Leyendo archivo...');
-      const arrayBuffer = await file.arrayBuffer();
-      
-      setUploadProgress('Creando blob...');
-      const videoBlob = new Blob([arrayBuffer], { type: file.type });
-      console.log('Blob creado:', {
-        size: videoBlob.size,
-        type: videoBlob.type
-      });
-
-      if (videoBlob.size !== file.size) {
-        throw new Error('Error al procesar el video: el tamaño no coincide');
-      }
-
-      setUploadProgress('Creando URL...');
-      url = URL.createObjectURL(videoBlob);
-      console.log('URL creada:', url);
+      setUploadProgress('Subiendo a B2...');
+      url = await uploadToB2(file);
+      console.log('URL de B2:', url);
 
       setUploadProgress('Verificando video...');
       await verifyVideo(url);
@@ -117,9 +156,6 @@ const VideoUploader: React.FC = () => {
       }, 1000);
 
     } catch (error) {
-      if (url) {
-        URL.revokeObjectURL(url);
-      }
       console.error('Error al procesar el video:', error);
       alert(error instanceof Error ? error.message : 'Error al procesar el video');
       setUploading(false);
