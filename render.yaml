@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: CTV_Validado_Adsmood
+    name: assets-service
     env: node
     rootDirectory: assets-service
     buildCommand: npm install && npm run build
