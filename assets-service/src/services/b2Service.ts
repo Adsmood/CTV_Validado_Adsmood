@@ -79,6 +79,10 @@ class B2Service {
       if (!this.uploadUrl || !this.uploadAuthToken) {
         console.log('No hay URL de subida o token, inicializando...');
         await this.initialize();
+        
+        if (!this.uploadUrl || !this.uploadAuthToken) {
+          throw new Error('No se pudo obtener la URL de subida o el token de autorización');
+        }
       }
 
       if (buffer.length === 0) {
@@ -95,13 +99,25 @@ class B2Service {
       }
 
       console.log('Subiendo archivo a B2...');
-      const response = await this.b2.uploadFile({
-        uploadUrl: this.uploadUrl!,
-        uploadAuthToken: this.uploadAuthToken!,
-        fileName,
-        data: buffer,
-        contentType
-      });
+      let response;
+      try {
+        response = await this.b2.uploadFile({
+          uploadUrl: this.uploadUrl!,
+          uploadAuthToken: this.uploadAuthToken!,
+          fileName,
+          data: buffer,
+          contentType
+        });
+      } catch (uploadError) {
+        console.error('Error en la subida a B2:', uploadError);
+        if (uploadError instanceof Error && 
+            (uploadError.message?.includes('expired') || uploadError.message?.includes('unauthorized'))) {
+          console.log('Token expirado o no autorizado, reintentando...');
+          await this.initialize();
+          return this.uploadFile(buffer, fileName, contentType);
+        }
+        throw new Error(`Error al subir archivo a B2: ${uploadError instanceof Error ? uploadError.message : 'Error desconocido'}`);
+      }
 
       console.log('Respuesta de B2:', {
         fileId: response.data.fileId,
@@ -119,13 +135,13 @@ class B2Service {
       console.log('Validando archivo subido...');
       const isValid = await this.validateUploadedFile(fileUrl);
       if (!isValid) {
-        console.error('File validation failed:', fileUrl);
-        throw new Error('File upload validation failed');
+        console.error('Validación del archivo fallida:', fileUrl);
+        throw new Error('La validación de la subida del archivo falló');
       }
 
       console.log('Archivo subido y validado exitosamente:', fileUrl);
       return fileUrl;
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error detallado al subir archivo a B2:', {
         error,
         fileName,
@@ -133,13 +149,9 @@ class B2Service {
         bufferSize: buffer.length
       });
       
-      if (error instanceof Error && 
-          (error.message?.includes('expired') || error.message?.includes('unauthorized'))) {
-        console.log('Token expirado o no autorizado, reintentando...');
-        await this.initialize();
-        return this.uploadFile(buffer, fileName, contentType);
-      }
-      throw new Error('Failed to upload file to B2');
+      throw error instanceof Error 
+        ? error 
+        : new Error('Error inesperado al subir archivo a B2');
     }
   }
 }

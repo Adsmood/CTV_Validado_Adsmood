@@ -47,37 +47,51 @@ const BackgroundUploader: React.FC = () => {
         const formData = new FormData();
         formData.append('file', file);
         
-        const response = await fetch('https://assets-service-hm83.onrender.com/api/assets/upload', {
-          method: 'POST',
-          body: formData,
-        });
+        try {
+          console.log('Iniciando subida a B2...');
+          const response = await fetch('https://assets-service-hm83.onrender.com/api/assets/upload', {
+            method: 'POST',
+            body: formData,
+          });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Error al subir el video a B2');
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Error de respuesta B2:', {
+              status: response.status,
+              statusText: response.statusText,
+              error: errorData
+            });
+            throw new Error(errorData.error || `Error al subir el video: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          if (!data.url) {
+            throw new Error('No se recibió la URL del archivo');
+          }
+
+          // Verificar que el archivo sea accesible
+          console.log('Verificando accesibilidad del archivo...');
+          const fileCheck = await fetch(data.url, { method: 'HEAD' });
+          if (!fileCheck.ok) {
+            throw new Error('El archivo subido no es accesible');
+          }
+
+          // Establecer como fondo
+          setBackground({
+            url: data.url,
+            type: 'video',
+            style: {
+              scale: 1,
+              position: { x: 0, y: 0 },
+            },
+            originalFile: file
+          });
+        } catch (error) {
+          console.error('Error detallado al subir a B2:', error);
+          throw error instanceof Error 
+            ? error 
+            : new Error('Error inesperado al subir el archivo');
         }
-
-        const data = await response.json();
-        if (!data.url) {
-          throw new Error('No se recibió la URL del archivo');
-        }
-
-        // Verificar que el archivo sea accesible
-        const fileCheck = await fetch(data.url, { method: 'HEAD' });
-        if (!fileCheck.ok) {
-          throw new Error('El archivo subido no es accesible');
-        }
-
-        // Establecer como fondo
-        setBackground({
-          url: data.url,
-          type: 'video',
-          style: {
-            scale: 1,
-            position: { x: 0, y: 0 },
-          },
-          originalFile: file
-        });
       } else {
         // Si es una imagen, usar URL.createObjectURL
         const url = URL.createObjectURL(file);
