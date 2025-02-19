@@ -17,30 +17,7 @@ class B2Service {
     try {
       await this.b2.authorize();
       
-      // Configurar el bucket con las reglas CORS
-      try {
-        await this.b2.updateBucket({
-          bucketId: config.b2.bucketId,
-          bucketType: 'allPublic',
-          corsRules: [
-            {
-              allowedOrigins: ["*"],
-              allowedHeaders: ["*"],
-              allowedOperations: [
-                "b2_download_file_by_id",
-                "b2_download_file_by_name"
-              ],
-              exposeHeaders: ["x-bz-content-sha1"],
-              maxAgeSeconds: 3600
-            }
-          ],
-          lifecycleRules: []
-        });
-        console.log('Bucket configuration updated successfully');
-      } catch (bucketError) {
-        console.error('Error updating bucket configuration:', bucketError);
-      }
-
+      // La configuración CORS se maneja desde la interfaz web de B2
       const response = await this.b2.getUploadUrl({
         bucketId: config.b2.bucketId,
       });
@@ -79,11 +56,7 @@ class B2Service {
         uploadAuthToken: this.uploadAuthToken!,
         fileName,
         data: buffer,
-        contentType,
-        info: {
-          'Content-Disposition': 'inline',
-          'Cache-Control': 'public, max-age=31536000'
-        }
+        contentType
       });
 
       const fileUrl = `${config.b2.fileUrl}/${response.data.fileName}`;
