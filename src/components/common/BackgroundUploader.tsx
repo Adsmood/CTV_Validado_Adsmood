@@ -25,6 +25,7 @@ const BackgroundUploader: React.FC = () => {
     scale: 1,
     position: { x: 50, y: 50 },
   });
+  const [uploadProgress, setUploadProgress] = useState('');
 
   const handleFileAccepted = async (file: File) => {
     try {
@@ -53,6 +54,8 @@ const BackgroundUploader: React.FC = () => {
           body: formData,
         });
 
+        setUploadProgress('Subiendo a B2...');
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Error al subir el video a B2');
@@ -78,22 +81,6 @@ const BackgroundUploader: React.FC = () => {
             position: { x: 0, y: 0 },
           },
           originalFile: file
-        });
-
-        // Agregar como elemento
-        addElement('video', {
-          src: data.url,
-          originalFile: file,
-          metadata: {
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            lastModified: file.lastModified
-          },
-          style: {
-            scale: 1,
-            position: { x: 0, y: 0 }
-          }
         });
       } else {
         // Si es una imagen, usar URL.createObjectURL
