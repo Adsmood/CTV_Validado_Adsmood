@@ -15,95 +15,44 @@ const VideoUploader: React.FC = () => {
     position: { x: 50, y: 50 },
   });
 
+  const addElement = useEditorStore((state) => state.addElement);
+
   const handleFileAccepted = async (file: File) => {
     try {
-      console.log('Archivo original recibido:', {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        lastModified: file.lastModified
-      });
-
-      // Validar tamaño mínimo
-      if (file.size < 1000000) { // 1MB
-        throw new Error('El archivo es demasiado pequeño. Debe ser al menos 1MB.');
-      }
-
-      // Validar tipo de archivo
-      if (!file.type.startsWith('video/')) {
-        throw new Error('El archivo debe ser un video.');
-      }
-
-      // Crear una copia del archivo para preservar los metadatos
-      const fileCopy = new File([file], file.name, {
-        type: file.type,
-        lastModified: file.lastModified
-      });
-
-      console.log('Copia del archivo creada:', {
-        name: fileCopy.name,
-        size: fileCopy.size,
-        type: fileCopy.type,
-        lastModified: fileCopy.lastModified
-      });
-
-      // Validar que la copia mantenga el tamaño
-      if (fileCopy.size !== file.size) {
-        throw new Error('Error al procesar el archivo.');
-      }
-
-      const url = URL.createObjectURL(fileCopy);
-      console.log('URL creada:', url);
-
-      // Establecer como fondo en lugar de agregar como elemento
-      setBackground({
-        url,
-        type: 'video',
+      const url = URL.createObjectURL(file);
+      addElement('video', {
+        src: url,
         style: {
           scale: 1,
           position: { x: 50, y: 50 },
         },
-        originalFile: fileCopy // Guardar el archivo original
       });
-
       setOpen(false);
     } catch (error) {
       console.error('Error al procesar el video:', error);
-      alert(error instanceof Error ? error.message : 'Error al procesar el video');
-    }
-  };
-
-  const handleStyleChange = (key: 'scale' | 'position', value: any) => {
-    const newStyle = { ...style };
-    if (key === 'position') {
-      newStyle.position = { ...newStyle.position, ...value };
-    } else {
-      newStyle[key] = value;
-    }
-    setStyle(newStyle);
-    if (background) {
-      setBackground({
-        ...background,
-        style: newStyle,
-      });
     }
   };
 
   return (
-    <Stack spacing={1}>
-      <Tooltip title="Añadir Video" placement="right">
-        <IconButton
-          onClick={() => setOpen(true)}
-          sx={{
-            width: '44px',
-            height: '44px',
-          }}
-        >
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{
+        position: 'absolute',
+        right: 16,
+        top: 16,
+        bgcolor: 'background.paper',
+        borderRadius: 1,
+        p: 1,
+      }}
+    >
+      <Tooltip title="Añadir Video" placement="bottom">
+        <IconButton onClick={() => setOpen(true)}>
           <VideoIcon />
         </IconButton>
       </Tooltip>
 
-      {background && (
+      {background && background.type === 'video' && (
         <Box sx={{ width: 150 }}>
           <Stack spacing={1}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -168,4 +117,4 @@ const VideoUploader: React.FC = () => {
   );
 };
 
-export default VideoUploader; 
+export default VideoUploader;
