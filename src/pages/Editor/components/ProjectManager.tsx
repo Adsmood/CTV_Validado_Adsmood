@@ -36,6 +36,7 @@ const ProjectManager: React.FC = () => {
   const { elements } = useEditorStore();
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSave = async () => {
     if (!projectName.trim()) {
@@ -143,9 +144,13 @@ const ProjectManager: React.FC = () => {
           <Box>
             <IconButton 
               onClick={() => setOpen(true)}
+              disabled={isLoading}
               sx={{
                 width: '44px',
                 height: '44px',
+                '&.Mui-disabled': {
+                  opacity: 0.5,
+                }
               }}
             >
               <FolderIcon />
