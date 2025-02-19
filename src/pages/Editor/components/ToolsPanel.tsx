@@ -123,6 +123,22 @@ const ToolsPanel: React.FC = () => {
       const b2Url = await uploadToB2(file);
       console.log('Video subido a B2:', b2Url);
 
+      // Crear una copia del estado del editor con las URLs de B2
+      const editorStateWithB2 = {
+        ...editorState,
+        background: editorState.background ? {
+          ...editorState.background,
+          url: b2Url
+        } : null,
+        elements: editorState.elements.map(el => ({
+          ...el,
+          content: el.type === 'video' ? {
+            ...el.content,
+            src: b2Url
+          } : el.content
+        }))
+      };
+
       const options = {
         baseUrl: window.location.origin,
         impressionUrl: `${window.location.origin}/track/impression`,
@@ -152,7 +168,7 @@ const ToolsPanel: React.FC = () => {
         isB2Url: true
       };
 
-      const vastXml = generateVastXml(editorState, options);
+      const vastXml = generateVastXml(editorStateWithB2, options);
       const xmlBlob = new Blob([vastXml], { type: 'application/xml' });
       const url = URL.createObjectURL(xmlBlob);
       const a = document.createElement('a');
