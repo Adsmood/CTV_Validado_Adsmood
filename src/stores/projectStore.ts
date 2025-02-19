@@ -421,11 +421,7 @@ const useProjectStore = create<ProjectState>()(
                 background: '#000000',
                 logging: false,
                 useCORS: true,
-                allowTaint: true,
-                onclone: (doc: Document) => {
-                  const controls = doc.querySelector('.controls-overlay');
-                  if (controls) controls.remove();
-                }
+                allowTaint: true
               });
               
               return thumbnail.toDataURL('image/jpeg', 0.3);
@@ -437,11 +433,7 @@ const useProjectStore = create<ProjectState>()(
               background: '#000000',
               logging: false,
               useCORS: true,
-              allowTaint: true,
-              onclone: (doc: Document) => {
-                const controls = doc.querySelector('.controls-overlay');
-                if (controls) controls.remove();
-              }
+              allowTaint: true
             });
             
             return thumbnail.toDataURL('image/jpeg', 0.3);
