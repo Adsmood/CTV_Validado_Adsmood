@@ -1,10 +1,26 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import type { Project } from '../types/project';
 import { useEditorStore } from './editorStore';
 import { v4 as uuidv4 } from 'uuid';
 import type { Element, Background } from './editorStore';
 import html2canvas from 'html2canvas';
+
+export interface Project {
+  id: string;
+  name: string;
+  lastModified: number;
+  thumbnail: string;
+  data: {
+    elements: Element[];
+    background: Background | null;
+    timeline: {
+      currentTime: number;
+      isPlaying: boolean;
+      duration: number;
+    };
+  };
+  videoRefs: { [key: string]: string };
+}
 
 interface ProjectState {
   projects: Project[];
@@ -340,7 +356,10 @@ const useProjectStore = create<ProjectState>()(
             
             // Aseguramos que los elementos y el fondo sean objetos válidos
             const elements = Array.isArray(project.data.elements) ? project.data.elements : [];
-            const background = project.data.background || null;
+            const background = project.data.background ? {
+              ...project.data.background,
+              type: 'video' as const
+            } : null;
             const timeline = project.data.timeline || {
               currentTime: 0,
               isPlaying: false,
@@ -350,7 +369,6 @@ const useProjectStore = create<ProjectState>()(
             // Restaurar las referencias a los videos
             if (project.videoRefs) {
               Object.entries(project.videoRefs).forEach(([key, value]) => {
-                // Si la URL del video aún existe, usarla
                 try {
                   fetch(value as string).catch(err => 
                     console.warn(`Video reference ${key} no longer available:`, err)
@@ -404,7 +422,6 @@ const useProjectStore = create<ProjectState>()(
                 logging: false,
                 useCORS: true,
                 allowTaint: true,
-                // @ts-ignore
                 onclone: (doc: Document) => {
                   const controls = doc.querySelector('.controls-overlay');
                   if (controls) controls.remove();
@@ -421,7 +438,6 @@ const useProjectStore = create<ProjectState>()(
               logging: false,
               useCORS: true,
               allowTaint: true,
-              // @ts-ignore
               onclone: (doc: Document) => {
                 const controls = doc.querySelector('.controls-overlay');
                 if (controls) controls.remove();
