@@ -83,18 +83,6 @@ class B2Service {
       throw new Error('Failed to upload file to B2');
     }
   }
-
-  async getFileInfo(fileName: string): Promise<any> {
-    try {
-      const response = await this.b2.getFileInfo({
-        fileId: fileName
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error getting file info:', error);
-      throw new Error('Failed to get file info');
-    }
-  }
 }
 
 export const b2Service = new B2Service(); 
