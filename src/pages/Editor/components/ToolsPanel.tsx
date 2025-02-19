@@ -148,7 +148,8 @@ const ToolsPanel: React.FC = () => {
           }
         ],
         fallbackVideoUrl: b2Url,
-        platform: 'roku' as const
+        platform: 'roku' as const,
+        isB2Url: true
       };
 
       const vastXml = generateVastXml(editorState, options);

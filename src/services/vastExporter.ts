@@ -27,6 +27,7 @@ interface VastOptions {
   videoFormats: VideoFormat[];
   fallbackVideoUrl: string;
   platform?: 'roku' | 'fireTV' | 'appleTV' | 'androidTV' | 'other';
+  isB2Url?: boolean;
 }
 
 interface InteractiveElement {
@@ -163,6 +164,11 @@ export const generateVastXml = (state: Pick<EditorState, 'elements' | 'backgroun
     options.platform
   );
 
+  const getMediaUrl = (url: string) => {
+    if (options.isB2Url) return url;
+    return url.startsWith('blob:') ? url : `${options.baseUrl}${url}`;
+  };
+
   const vast = `<?xml version="1.0" encoding="UTF-8"?>
 <VAST version="4.2" xmlns="http://www.iab.com/VAST">
   <Ad id="adsmood-${Date.now()}">
@@ -203,19 +209,31 @@ export const generateVastXml = (state: Pick<EditorState, 'elements' | 'backgroun
                 bitrate="${format.bitrate}"
                 codec="${format.codec}"
                 maintainAspectRatio="true">
-                <![CDATA[${format.url.startsWith('blob:') ? format.url : `${options.baseUrl}${format.url}`}]]>
+                <![CDATA[${getMediaUrl(format.url)}]]>
               </MediaFile>
               `).join('')}
               <MediaFile delivery="progressive" type="video/mp4" width="1920" height="1080" maintainAspectRatio="true">
-                <![CDATA[${options.fallbackVideoUrl.startsWith('blob:') ? options.fallbackVideoUrl : `${options.baseUrl}${options.fallbackVideoUrl}`}]]>
+                <![CDATA[${getMediaUrl(options.fallbackVideoUrl)}]]>
               </MediaFile>
             </MediaFiles>
-            <AdParameters><![CDATA[${JSON.stringify(interactiveCreativeData)}]]></AdParameters>
+            <AdParameters><![CDATA[${JSON.stringify({
+              ...interactiveCreativeData,
+              fallback: {
+                ...interactiveCreativeData.fallback,
+                videoUrl: getMediaUrl(options.fallbackVideoUrl)
+              }
+            })}]]></AdParameters>
           </Linear>
           <CreativeExtensions>
             <CreativeExtension type="AdsmoodInteractive">
               <InteractiveCreativeData>
-                <![CDATA[${JSON.stringify(interactiveCreativeData)}]]>
+                <![CDATA[${JSON.stringify({
+                  ...interactiveCreativeData,
+                  fallback: {
+                    ...interactiveCreativeData.fallback,
+                    videoUrl: getMediaUrl(options.fallbackVideoUrl)
+                  }
+                })}]]>
               </InteractiveCreativeData>
             </CreativeExtension>
           </CreativeExtensions>
