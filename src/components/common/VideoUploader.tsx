@@ -147,7 +147,7 @@ const VideoUploader: React.FC = () => {
         },
         style: {
           scale: 1,
-          position: { x: 0, y: 0 }
+          position: { x: 50, y: 50 }
         }
       });
 
@@ -157,7 +157,7 @@ const VideoUploader: React.FC = () => {
         type: 'video',
         style: {
           scale: 1,
-          position: { x: 0, y: 0 },
+          position: { x: 50, y: 50 },
         },
         originalFile: file
       });

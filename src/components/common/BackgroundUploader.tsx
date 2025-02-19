@@ -16,9 +16,10 @@ export interface Background {
 
 const BackgroundUploader: React.FC = () => {
   const [open, setOpen] = React.useState(false);
-  const { background, setBackground } = useEditorStore((state) => ({
+  const { background, setBackground, addElement } = useEditorStore((state) => ({
     background: state.background,
     setBackground: state.setBackground,
+    addElement: state.addElement,
   }));
   const [style, setStyle] = useState({
     scale: 1,
@@ -68,14 +69,31 @@ const BackgroundUploader: React.FC = () => {
           throw new Error('El archivo subido no es accesible');
         }
 
+        // Establecer como fondo
         setBackground({
           url: data.url,
           type: 'video',
           style: {
             scale: 1,
-            position: { x: 50, y: 50 },
+            position: { x: 0, y: 0 },
           },
           originalFile: file
+        });
+
+        // Agregar como elemento
+        addElement('video', {
+          src: data.url,
+          originalFile: file,
+          metadata: {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            lastModified: file.lastModified
+          },
+          style: {
+            scale: 1,
+            position: { x: 0, y: 0 }
+          }
         });
       } else {
         // Si es una imagen, usar URL.createObjectURL
