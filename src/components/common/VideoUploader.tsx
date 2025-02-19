@@ -10,6 +10,13 @@ const VideoUploader: React.FC = () => {
 
   const handleFileAccepted = async (file: File) => {
     try {
+      console.log('Archivo recibido:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified
+      });
+
       if (file.size < 1000000) { // 1MB
         throw new Error('El archivo es demasiado pequeño. Debe ser al menos 1MB.');
       }
@@ -18,16 +25,51 @@ const VideoUploader: React.FC = () => {
         throw new Error('El archivo debe ser un video.');
       }
 
-      const fileCopy = new File([file], file.name, {
-        type: file.type,
-        lastModified: file.lastModified
+      // Crear un Blob con el archivo original
+      const videoBlob = new Blob([file], { type: file.type });
+      console.log('Blob creado:', {
+        size: videoBlob.size,
+        type: videoBlob.type
       });
 
-      const url = URL.createObjectURL(fileCopy);
+      // Verificar que el tamaño del Blob coincida con el archivo original
+      if (videoBlob.size !== file.size) {
+        throw new Error('Error al procesar el video: el tamaño no coincide');
+      }
 
+      // Crear URL del Blob
+      const url = URL.createObjectURL(videoBlob);
+      console.log('URL creada:', url);
+
+      // Verificar que el video sea reproducible
+      try {
+        const video = document.createElement('video');
+        video.src = url;
+        await new Promise((resolve, reject) => {
+          video.onloadedmetadata = resolve;
+          video.onerror = reject;
+        });
+        console.log('Video verificado:', {
+          duration: video.duration,
+          videoWidth: video.videoWidth,
+          videoHeight: video.videoHeight
+        });
+      } catch (error) {
+        console.error('Error al verificar el video:', error);
+        URL.revokeObjectURL(url);
+        throw new Error('El archivo de video no es válido o está corrupto');
+      }
+
+      // Agregar el elemento
       addElement('video', {
         src: url,
-        originalFile: fileCopy,
+        originalFile: file, // Guardamos el archivo original sin modificar
+        metadata: {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified
+        },
         style: {
           scale: 1,
           position: { x: 50, y: 50 }
