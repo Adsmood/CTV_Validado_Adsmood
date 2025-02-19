@@ -15,7 +15,7 @@ export interface Size {
 
 export interface Background {
   url: string;
-  type: 'video';
+  type: 'video' | 'image';
   style: {
     scale: number;
     position: { x: number; y: number };

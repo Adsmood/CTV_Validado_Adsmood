@@ -27,12 +27,23 @@ const BackgroundUploader: React.FC = () => {
 
   const handleFileAccepted = async (file: File) => {
     try {
+      console.log('Archivo recibido:', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+        throw new Error('El archivo debe ser una imagen o video.');
+      }
+
       const url = URL.createObjectURL(file);
       console.log('URL creada:', url);
 
       setBackground({
         url,
-        type: 'video',
+        type: file.type.startsWith('video/') ? 'video' : 'image',
         style: {
           scale: 1,
           position: { x: 50, y: 50 },
@@ -42,6 +53,7 @@ const BackgroundUploader: React.FC = () => {
       setOpen(false);
     } catch (error) {
       console.error('Error al procesar el fondo:', error);
+      alert(error instanceof Error ? error.message : 'Error al procesar el archivo');
     }
   };
 
@@ -62,66 +74,64 @@ const BackgroundUploader: React.FC = () => {
   };
 
   return (
-    <>
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{
-          position: 'absolute',
-          right: 16,
-          top: 16,
-          bgcolor: 'background.paper',
-          borderRadius: 1,
-          p: 1,
-        }}
-      >
-        <IconButton onClick={() => setOpen(true)}>
-          <AddIcon />
-        </IconButton>
-        
-        {background && (
-          <Box sx={{ width: 150 }}>
-            <Stack spacing={1}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <ZoomIn sx={{ mr: 1 }} />
-                <Slider
-                  size="small"
-                  value={style.scale}
-                  min={0.1}
-                  max={2}
-                  step={0.1}
-                  onChange={(_: Event, value: number | number[]) => 
-                    handleStyleChange('scale', Array.isArray(value) ? value[0] : value)
-                  }
-                />
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <CropFree sx={{ mr: 1 }} />
-                <Slider
-                  size="small"
-                  value={style.position.x}
-                  min={0}
-                  max={100}
-                  onChange={(_: Event, value: number | number[]) =>
-                    handleStyleChange('position', { x: Array.isArray(value) ? value[0] : value })
-                  }
-                />
-              </Box>
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{
+        position: 'absolute',
+        right: 16,
+        top: 16,
+        bgcolor: 'background.paper',
+        borderRadius: 1,
+        p: 1,
+      }}
+    >
+      <IconButton onClick={() => setOpen(true)}>
+        <AddIcon />
+      </IconButton>
+      
+      {background && (
+        <Box sx={{ width: 150 }}>
+          <Stack spacing={1}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <ZoomIn sx={{ mr: 1 }} />
               <Slider
                 size="small"
-                value={style.position.y}
-                min={0}
-                max={100}
-                orientation="vertical"
-                sx={{ height: 100 }}
-                onChange={(_: Event, value: number | number[]) =>
-                  handleStyleChange('position', { y: Array.isArray(value) ? value[0] : value })
+                value={style.scale}
+                min={0.1}
+                max={2}
+                step={0.1}
+                onChange={(_: Event, value: number | number[]) => 
+                  handleStyleChange('scale', Array.isArray(value) ? value[0] : value)
                 }
               />
-            </Stack>
-          </Box>
-        )}
-      </Stack>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <CropFree sx={{ mr: 1 }} />
+              <Slider
+                size="small"
+                value={style.position.x}
+                min={0}
+                max={100}
+                onChange={(_: Event, value: number | number[]) =>
+                  handleStyleChange('position', { x: Array.isArray(value) ? value[0] : value })
+                }
+              />
+            </Box>
+            <Slider
+              size="small"
+              value={style.position.y}
+              min={0}
+              max={100}
+              orientation="vertical"
+              sx={{ height: 100 }}
+              onChange={(_: Event, value: number | number[]) =>
+                handleStyleChange('position', { y: Array.isArray(value) ? value[0] : value })
+              }
+            />
+          </Stack>
+        </Box>
+      )}
 
       <Dialog
         open={open}
@@ -142,7 +152,7 @@ const BackgroundUploader: React.FC = () => {
           />
         </Box>
       </Dialog>
-    </>
+    </Stack>
   );
 };
 
