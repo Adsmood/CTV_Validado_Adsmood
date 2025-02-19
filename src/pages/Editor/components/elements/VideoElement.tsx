@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, IconButton, Stack, Slider } from '@mui/material';
+import { Box, Stack, Slider } from '@mui/material';
 import { ZoomIn, CropFree } from '@mui/icons-material';
 import { useEditorStore } from '../../../../stores/editorStore';
 
@@ -140,4 +140,4 @@ const VideoElement: React.FC<VideoElementProps> = ({ data, isSelected, elementId
   );
 };
 
-export default VideoElement; 
+export default VideoElement;

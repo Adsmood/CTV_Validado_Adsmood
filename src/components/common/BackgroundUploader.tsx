@@ -4,7 +4,7 @@ import { Add as AddIcon, ZoomIn, CropFree } from '@mui/icons-material';
 import FileUploader from './FileUploader';
 import { useEditorStore } from '../../stores/editorStore';
 
-interface Background {
+export interface Background {
   url: string;
   type: 'image' | 'video';
   style: {
@@ -139,4 +139,4 @@ const BackgroundUploader: React.FC = () => {
   );
 };
 
-export default BackgroundUploader; 
+export default BackgroundUploader;

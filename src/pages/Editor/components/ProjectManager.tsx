@@ -35,7 +35,6 @@ const ProjectManager: React.FC = () => {
   const { projects, currentProject, saveProject, loadProject, deleteProject, closeProject } = useProjectStore();
   const { elements } = useEditorStore();
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleSave = async () => {
@@ -321,4 +320,4 @@ const ProjectManager: React.FC = () => {
   );
 };
 
-export default ProjectManager; 
+export default ProjectManager;
