@@ -11,8 +11,10 @@ const VideoUploader: React.FC = () => {
   const verifyVideo = (url: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       const video = document.createElement('video');
+      let timeoutId: number;
       
       const cleanup = () => {
+        clearTimeout(timeoutId);
         video.removeEventListener('loadedmetadata', onLoad);
         video.removeEventListener('error', onError);
         video.src = '';
@@ -38,7 +40,7 @@ const VideoUploader: React.FC = () => {
       video.addEventListener('error', onError);
       
       // Establecer un timeout por si la carga tarda demasiado
-      const timeoutId = setTimeout(() => {
+      timeoutId = window.setTimeout(() => {
         cleanup();
         reject(new Error('Tiempo de espera agotado al cargar el video'));
       }, 10000); // 10 segundos de timeout
