@@ -103,6 +103,11 @@ const generateInteractiveWrapper = (
 export const generateVastXml = (state: Pick<EditorState, 'elements' | 'background' | 'timeline'>, options: VastOptions): string => {
   const { elements, background, timeline } = state;
   
+  const getMediaUrl = (url: string) => {
+    if (options.isB2Url) return url;
+    return url.startsWith('blob:') ? url : `${options.baseUrl}${url}`;
+  };
+
   // Transform elements to include tracking and CTV-specific properties
   const interactiveElements = elements.map((el: Element): InteractiveElement => ({
     ...el,
@@ -157,17 +162,12 @@ export const generateVastXml = (state: Pick<EditorState, 'elements' | 'backgroun
     interactiveElements,
     background ? {
       ...background,
-      url: background.url.startsWith('blob:') ? background.url : `${options.baseUrl}${background.url}`
+      url: getMediaUrl(background.url)
     } : null,
     timeline,
     options,
     options.platform
   );
-
-  const getMediaUrl = (url: string) => {
-    if (options.isB2Url) return url;
-    return url.startsWith('blob:') ? url : `${options.baseUrl}${url}`;
-  };
 
   const vast = `<?xml version="1.0" encoding="UTF-8"?>
 <VAST version="4.2" xmlns="http://www.iab.com/VAST">
