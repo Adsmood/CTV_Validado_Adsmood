@@ -14,7 +14,7 @@ const configSchema = z.object({
   }),
   server: z.object({
     port: z.number().positive(),
-    nodeEnv: z.enum(['development', 'production']).default('development'),
+    nodeEnv: z.enum(['development', 'production']).default('production'),
   }),
   cors: z.object({
     allowedOrigins: z.array(z.string().url()),
@@ -44,8 +44,8 @@ const config: Config = {
     fileUrl: process.env.B2_FILE_URL || '',
   },
   server: {
-    port: parseInt(process.env.PORT || '3001', 10),
-    nodeEnv: (process.env.NODE_ENV as 'development' | 'production') || 'development',
+    port: parseInt(process.env.PORT || '10000', 10), // Puerto por defecto para Render
+    nodeEnv: (process.env.NODE_ENV as 'development' | 'production') || 'production',
   },
   cors: {
     allowedOrigins: (process.env.ALLOWED_ORIGINS || '')
