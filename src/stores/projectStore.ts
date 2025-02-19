@@ -392,41 +392,35 @@ const useProjectStore = create<ProjectState>()(
           try {
             const html2canvas = (await import('html2canvas')).default;
             
-            // Esperar a que el DOM se actualice
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            const canvas = document.querySelector('#canvas-container');
-            if (!canvas) {
-              console.warn('Canvas container no encontrado, intentando de nuevo...');
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              const retryCanvas = document.querySelector('#canvas-container');
-              if (!retryCanvas) {
-                console.error('Canvas container no encontrado después del reintento');
-                // Retornar una miniatura en blanco en lugar de cadena vacía
-                const blankCanvas = document.createElement('canvas');
-                blankCanvas.width = 200;
-                blankCanvas.height = 150;
-                const ctx = blankCanvas.getContext('2d');
-                if (ctx) {
-                  ctx.fillStyle = '#000000';
-                  ctx.fillRect(0, 0, 200, 150);
-                }
-                return blankCanvas.toDataURL('image/jpeg', 0.3);
+            // Función para esperar a que el elemento esté disponible
+            const waitForElement = async (selector: string, maxAttempts = 5): Promise<HTMLElement | null> => {
+              for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                const element = document.querySelector(selector);
+                if (element) return element as HTMLElement;
+                await new Promise(resolve => setTimeout(resolve, 1000));
               }
-              
-              const thumbnail = await html2canvas(retryCanvas as HTMLElement, {
-                width: 200,
-                height: 150,
-                background: '#000000',
-                logging: false,
-                useCORS: true,
-                allowTaint: true
-              });
-              
-              return thumbnail.toDataURL('image/jpeg', 0.3);
+              return null;
+            };
+            
+            console.log('Esperando canvas-container...');
+            const canvas = await waitForElement('#canvas-container');
+            
+            if (!canvas) {
+              console.warn('Canvas container no encontrado después de varios intentos');
+              // Crear una miniatura en blanco
+              const blankCanvas = document.createElement('canvas');
+              blankCanvas.width = 200;
+              blankCanvas.height = 150;
+              const ctx = blankCanvas.getContext('2d');
+              if (ctx) {
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, 200, 150);
+              }
+              return blankCanvas.toDataURL('image/jpeg', 0.3);
             }
 
-            const thumbnail = await html2canvas(canvas as HTMLElement, {
+            console.log('Generando thumbnail...');
+            const thumbnail = await html2canvas(canvas, {
               width: 200,
               height: 150,
               background: '#000000',
