@@ -11,25 +11,69 @@ const VideoUploader: React.FC = () => {
     setBackground: state.setBackground,
   }));
   const [style, setStyle] = useState({
-    scale: 1,
-    position: { x: 50, y: 50 },
+    scale: background?.style?.scale || 1,
+    position: background?.style?.position || { x: 50, y: 50 },
   });
-
-  const addElement = useEditorStore((state) => state.addElement);
 
   const handleFileAccepted = async (file: File) => {
     try {
-      const url = URL.createObjectURL(file);
-      addElement('video', {
-        src: url,
+      console.log('Archivo original recibido:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified
+      });
+
+      // Validar tamaño mínimo
+      if (file.size < 1000000) { // 1MB
+        throw new Error('El archivo es demasiado pequeño. Debe ser al menos 1MB.');
+      }
+
+      // Validar tipo de archivo
+      if (!file.type.startsWith('video/')) {
+        throw new Error('El archivo debe ser un video.');
+      }
+
+      // Crear una copia del archivo para preservar los metadatos
+      const fileCopy = new File([file], file.name, {
+        type: file.type,
+        lastModified: file.lastModified
+      });
+
+      const url = URL.createObjectURL(fileCopy);
+      console.log('URL creada:', url);
+
+      // Establecer como fondo
+      setBackground({
+        url,
+        type: 'video',
         style: {
           scale: 1,
           position: { x: 50, y: 50 },
         },
+        originalFile: fileCopy
       });
+
       setOpen(false);
     } catch (error) {
       console.error('Error al procesar el video:', error);
+      alert(error instanceof Error ? error.message : 'Error al procesar el video');
+    }
+  };
+
+  const handleStyleChange = (key: 'scale' | 'position', value: any) => {
+    const newStyle = { ...style };
+    if (key === 'position') {
+      newStyle.position = { ...newStyle.position, ...value };
+    } else {
+      newStyle[key] = value;
+    }
+    setStyle(newStyle);
+    if (background) {
+      setBackground({
+        ...background,
+        style: newStyle,
+      });
     }
   };
 
