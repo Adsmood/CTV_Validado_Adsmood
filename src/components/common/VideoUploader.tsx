@@ -9,7 +9,6 @@ const VideoUploader: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
   const addElement = useEditorStore((state) => state.addElement);
-  const setBackground = useEditorStore((state) => state.setBackground);
 
   const uploadToB2 = async (file: File): Promise<string> => {
     const formData = new FormData();

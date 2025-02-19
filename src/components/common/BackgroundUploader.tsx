@@ -16,16 +16,14 @@ export interface Background {
 
 const BackgroundUploader: React.FC = () => {
   const [open, setOpen] = React.useState(false);
-  const { background, setBackground, addElement } = useEditorStore((state) => ({
+  const { background, setBackground } = useEditorStore((state) => ({
     background: state.background,
     setBackground: state.setBackground,
-    addElement: state.addElement,
   }));
   const [style, setStyle] = useState({
     scale: 1,
     position: { x: 50, y: 50 },
   });
-  const [uploadProgress, setUploadProgress] = useState('');
 
   const handleFileAccepted = async (file: File) => {
     try {
@@ -53,8 +51,6 @@ const BackgroundUploader: React.FC = () => {
           method: 'POST',
           body: formData,
         });
-
-        setUploadProgress('Subiendo a B2...');
 
         if (!response.ok) {
           const errorData = await response.json();
