@@ -38,18 +38,61 @@ const BackgroundUploader: React.FC = () => {
         throw new Error('El archivo debe ser una imagen o video.');
       }
 
-      const url = URL.createObjectURL(file);
-      console.log('URL creada:', url);
+      // Si es un video, subir a B2 primero
+      if (file.type.startsWith('video/')) {
+        if (file.size < 1000000) { // 1MB
+          throw new Error('El archivo de video debe ser al menos 1MB.');
+        }
 
-      setBackground({
-        url,
-        type: file.type.startsWith('video/') ? 'video' : 'image',
-        style: {
-          scale: 1,
-          position: { x: 50, y: 50 },
-        },
-        originalFile: file
-      });
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch('https://assets-service-hm83.onrender.com/api/assets/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Error al subir el video a B2');
+        }
+
+        const data = await response.json();
+        if (!data.url) {
+          throw new Error('No se recibió la URL del archivo');
+        }
+
+        // Verificar que el archivo sea accesible
+        const fileCheck = await fetch(data.url, { method: 'HEAD' });
+        if (!fileCheck.ok) {
+          throw new Error('El archivo subido no es accesible');
+        }
+
+        setBackground({
+          url: data.url,
+          type: 'video',
+          style: {
+            scale: 1,
+            position: { x: 50, y: 50 },
+          },
+          originalFile: file
+        });
+      } else {
+        // Si es una imagen, usar URL.createObjectURL
+        const url = URL.createObjectURL(file);
+        console.log('URL creada:', url);
+
+        setBackground({
+          url,
+          type: 'image',
+          style: {
+            scale: 1,
+            position: { x: 50, y: 50 },
+          },
+          originalFile: file
+        });
+      }
+      
       setOpen(false);
     } catch (error) {
       console.error('Error al procesar el fondo:', error);

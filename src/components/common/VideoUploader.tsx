@@ -9,6 +9,7 @@ const VideoUploader: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
   const addElement = useEditorStore((state) => state.addElement);
+  const setBackground = useEditorStore((state) => state.setBackground);
 
   const uploadToB2 = async (file: File): Promise<string> => {
     const formData = new FormData();
@@ -132,7 +133,20 @@ const VideoUploader: React.FC = () => {
       setUploadProgress('Verificando video...');
       await verifyVideo(url);
 
-      setUploadProgress('Agregando elemento...');
+      setUploadProgress('Agregando elemento y estableciendo fondo...');
+      
+      // Establecer como fondo
+      setBackground({
+        url,
+        type: 'video',
+        style: {
+          scale: 1,
+          position: { x: 50, y: 50 },
+        },
+        originalFile: file
+      });
+
+      // Agregar como elemento
       addElement('video', {
         src: url,
         originalFile: file,
