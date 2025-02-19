@@ -13,7 +13,7 @@ class B2Service {
     });
   }
 
-  async initialize() {
+  async initialize(): Promise<void> {
     try {
       await this.b2.authorize();
       const response = await this.b2.getUploadUrl({
@@ -27,7 +27,7 @@ class B2Service {
     }
   }
 
-  async uploadFile(buffer: Buffer, fileName: string, contentType: string) {
+  async uploadFile(buffer: Buffer, fileName: string, contentType: string): Promise<string> {
     try {
       if (!this.uploadUrl || !this.uploadAuthToken) {
         await this.initialize();
@@ -42,10 +42,10 @@ class B2Service {
       });
 
       return `${config.b2.fileUrl}/${response.data.fileName}`;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error uploading file to B2:', error);
-      // Si el error es por token expirado, intentamos reinicializar
-      if (error.message?.includes('expired') || error.message?.includes('unauthorized')) {
+      if (error instanceof Error && 
+          (error.message?.includes('expired') || error.message?.includes('unauthorized'))) {
         await this.initialize();
         return this.uploadFile(buffer, fileName, contentType);
       }
