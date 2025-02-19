@@ -263,11 +263,26 @@ export const generateVastXml = (state: Pick<EditorState, 'elements' | 'backgroun
               trackingUrls: {
                 impression: options.impressionUrl,
                 complete: options.completeTrackingUrl,
-                interaction: options.interactionTrackingUrl
+                interaction: options.interactionTrackingUrl,
+                quartiles: options.quartileTrackingUrls
               },
-              platform: options.platform
+              platform: options.platform,
+              security: {
+                hmac: true,
+                timestamp: Date.now(),
+                version: "1.0"
+              },
+              viewability: {
+                minViewability: 50,
+                timeInView: 2,
+                skipAfter: 5
+              }
             })}]]>
           </VerificationParameters>
+        </Extension>
+        <Extension type="AdServingData">
+          <AppBundle>com.adsmood.ctv</AppBundle>
+          <AdServingVersion>1.0</AdServingVersion>
         </Extension>
       </Extensions>
     </InLine>

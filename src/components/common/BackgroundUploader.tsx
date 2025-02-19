@@ -143,8 +143,12 @@ const BackgroundUploader: React.FC = () => {
         borderRadius: 1,
         p: 1,
       }}
+      data-inert={open ? 'true' : undefined}
     >
-      <IconButton onClick={() => setOpen(true)}>
+      <IconButton 
+        onClick={() => setOpen(true)}
+        aria-label="Abrir selector de fondo"
+      >
         <AddIcon />
       </IconButton>
       
