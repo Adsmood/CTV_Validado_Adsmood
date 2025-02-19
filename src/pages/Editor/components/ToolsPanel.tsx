@@ -102,13 +102,23 @@ const ToolsPanel: React.FC = () => {
       // Convertir la URL blob a File
       const response = await fetch(backgroundUrl);
       const blob = await response.blob();
+      
+      // Validar el tamaño del blob
+      if (blob.size < 1000000) { // Menos de 1MB
+        console.error('El archivo es demasiado pequeño:', {
+          size: blob.size,
+          type: blob.type
+        });
+        throw new Error('El archivo de video es demasiado pequeño. Debe ser al menos 1MB.');
+      }
+
       console.log('Blob obtenido:', {
         size: blob.size,
         type: blob.type,
         lastModified: new Date().getTime()
       });
       
-      // Asegurar que el tipo MIME sea video/mp4
+      // Asegurar que el tipo MIME sea video/mp4 y preservar el blob original
       const file = new File([blob], 'background-video.mp4', { 
         type: 'video/mp4',
         lastModified: new Date().getTime()
@@ -120,6 +130,15 @@ const ToolsPanel: React.FC = () => {
         type: file.type,
         lastModified: file.lastModified
       });
+
+      // Validar el tamaño del archivo
+      if (file.size !== blob.size) {
+        console.error('El tamaño del archivo no coincide con el blob:', {
+          blobSize: blob.size,
+          fileSize: file.size
+        });
+        throw new Error('Error al procesar el archivo de video.');
+      }
 
       // Subir el archivo a B2 con FormData
       const formData = new FormData();

@@ -10,7 +10,36 @@ const VideoUploader: React.FC = () => {
 
   const handleFileAccepted = async (file: File) => {
     try {
-      const url = URL.createObjectURL(file);
+      console.log('Archivo recibido:', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+
+      // Validar tamaño mínimo
+      if (file.size < 1000000) { // 1MB
+        throw new Error('El archivo es demasiado pequeño. Debe ser al menos 1MB.');
+      }
+
+      // Validar tipo de archivo
+      if (!file.type.startsWith('video/')) {
+        throw new Error('El archivo debe ser un video.');
+      }
+
+      // Crear una copia del archivo para preservar los metadatos
+      const fileCopy = new File([file], file.name, {
+        type: file.type,
+        lastModified: file.lastModified
+      });
+
+      // Validar que la copia mantenga el tamaño
+      if (fileCopy.size !== file.size) {
+        throw new Error('Error al procesar el archivo.');
+      }
+
+      const url = URL.createObjectURL(fileCopy);
+      console.log('URL creada:', url);
+
       addElement('video', {
         src: url,
         style: {
@@ -21,6 +50,7 @@ const VideoUploader: React.FC = () => {
       setOpen(false);
     } catch (error) {
       console.error('Error al procesar el video:', error);
+      alert(error instanceof Error ? error.message : 'Error al procesar el video');
     }
   };
 
