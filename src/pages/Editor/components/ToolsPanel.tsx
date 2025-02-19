@@ -145,77 +145,113 @@ const ToolsPanel: React.FC = () => {
       formData.append('file', file);
       
       console.log('FormData creado, iniciando subida a B2...');
-      const response2 = await fetch('https://assets-service-hm83.onrender.com/api/assets/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!response2.ok) {
-        const errorData = await response2.json();
-        console.error('Error del servidor:', errorData);
-        throw new Error(errorData.error || 'Error al subir el archivo a B2');
-      }
-      
-      const data = await response2.json();
-      const b2Url = data.url;
-      console.log('Video subido a B2:', b2Url);
+      try {
+        const response2 = await fetch('https://assets-service-hm83.onrender.com/api/assets/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        console.log('Respuesta del servidor:', {
+          status: response2.status,
+          statusText: response2.statusText,
+          headers: Object.fromEntries(response2.headers.entries())
+        });
 
-      // Crear una copia del estado del editor con las URLs de B2
-      const editorStateWithB2 = {
-        ...editorState,
-        background: editorState.background ? {
-          ...editorState.background,
-          url: b2Url,
-          type: 'video' as const  // Aseguramos que el tipo sea literal 'video'
-        } : null,
-        elements: editorState.elements.map(el => ({
-          ...el,
-          content: el.type === 'video' ? {
-            ...el.content,
-            src: b2Url
-          } : el.content
-        }))
-      };
+        const responseText = await response2.text();
+        console.log('Respuesta completa:', responseText);
 
-      const options = {
-        baseUrl: window.location.origin,
-        impressionUrl: `${window.location.origin}/track/impression`,
-        clickTrackingUrl: `${window.location.origin}/track/click`,
-        startTrackingUrl: `${window.location.origin}/track/start`,
-        completeTrackingUrl: `${window.location.origin}/track/complete`,
-        skipTrackingUrl: `${window.location.origin}/track/skip`,
-        interactionTrackingUrl: `${window.location.origin}/track/interaction`,
-        viewableImpressionUrl: `${window.location.origin}/track/viewable`,
-        quartileTrackingUrls: {
-          firstQuartile: `${window.location.origin}/track/firstQuartile`,
-          midpoint: `${window.location.origin}/track/midpoint`,
-          thirdQuartile: `${window.location.origin}/track/thirdQuartile`,
-        },
-        videoFormats: [
-          {
-            url: b2Url,
-            codec: 'H.264' as const,
-            bitrate: 2000,
-            width: 1920,
-            height: 1080,
-            delivery: 'progressive' as const
+        if (!response2.ok) {
+          let errorMessage = 'Error al subir el archivo a B2';
+          try {
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData.error || errorMessage;
+          } catch (e) {
+            console.error('Error al parsear la respuesta:', e);
           }
-        ],
-        fallbackVideoUrl: b2Url,
-        platform: 'roku' as const,
-        isB2Url: true
-      };
+          throw new Error(errorMessage);
+        }
 
-      const vastXml = generateVastXml(editorStateWithB2, options);
-      const xmlBlob = new Blob([vastXml], { type: 'application/xml' });
-      const url = URL.createObjectURL(xmlBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `adsmood-vast-${Date.now()}.xml`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+        const data = JSON.parse(responseText);
+        const b2Url = data.url;
+        console.log('Video subido a B2:', b2Url);
+
+        if (!b2Url) {
+          throw new Error('No se recibió la URL del video subido');
+        }
+
+        // Verificar que la URL sea accesible
+        const videoCheck = await fetch(b2Url, { method: 'HEAD' });
+        if (!videoCheck.ok) {
+          throw new Error('El video subido no es accesible');
+        }
+
+        console.log('Video verificado:', {
+          url: b2Url,
+          status: videoCheck.status,
+          contentType: videoCheck.headers.get('content-type'),
+          contentLength: videoCheck.headers.get('content-length')
+        });
+
+        // Crear una copia del estado del editor con las URLs de B2
+        const editorStateWithB2 = {
+          ...editorState,
+          background: editorState.background ? {
+            ...editorState.background,
+            url: b2Url,
+            type: 'video' as const  // Aseguramos que el tipo sea literal 'video'
+          } : null,
+          elements: editorState.elements.map(el => ({
+            ...el,
+            content: el.type === 'video' ? {
+              ...el.content,
+              src: b2Url
+            } : el.content
+          }))
+        };
+
+        const options = {
+          baseUrl: window.location.origin,
+          impressionUrl: `${window.location.origin}/track/impression`,
+          clickTrackingUrl: `${window.location.origin}/track/click`,
+          startTrackingUrl: `${window.location.origin}/track/start`,
+          completeTrackingUrl: `${window.location.origin}/track/complete`,
+          skipTrackingUrl: `${window.location.origin}/track/skip`,
+          interactionTrackingUrl: `${window.location.origin}/track/interaction`,
+          viewableImpressionUrl: `${window.location.origin}/track/viewable`,
+          quartileTrackingUrls: {
+            firstQuartile: `${window.location.origin}/track/firstQuartile`,
+            midpoint: `${window.location.origin}/track/midpoint`,
+            thirdQuartile: `${window.location.origin}/track/thirdQuartile`,
+          },
+          videoFormats: [
+            {
+              url: b2Url,
+              codec: 'H.264' as const,
+              bitrate: 2000,
+              width: 1920,
+              height: 1080,
+              delivery: 'progressive' as const
+            }
+          ],
+          fallbackVideoUrl: b2Url,
+          platform: 'roku' as const,
+          isB2Url: true
+        };
+
+        const vastXml = generateVastXml(editorStateWithB2, options);
+        const xmlBlob = new Blob([vastXml], { type: 'application/xml' });
+        const url = URL.createObjectURL(xmlBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `adsmood-vast-${Date.now()}.xml`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error al exportar VAST:', error);
+        alert('Error al exportar el VAST. Por favor, intenta de nuevo.');
+      }
     } catch (error) {
       console.error('Error al exportar VAST:', error);
       alert('Error al exportar el VAST. Por favor, intenta de nuevo.');

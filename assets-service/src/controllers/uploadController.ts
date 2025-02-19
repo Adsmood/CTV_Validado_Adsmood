@@ -5,7 +5,10 @@ import path from 'path';
 
 export const uploadFile = async (req: Request, res: Response) => {
   try {
+    console.log('Iniciando proceso de subida...');
+    
     if (!req.file) {
+      console.error('No se proporcionó ningún archivo');
       return res.status(400).json({ error: 'No se proporcionó ningún archivo' });
     }
 
@@ -14,14 +17,22 @@ export const uploadFile = async (req: Request, res: Response) => {
       originalName: file.originalname,
       size: file.size,
       mimetype: file.mimetype,
-      bufferSize: file.buffer.length
+      bufferSize: file.buffer.length,
+      headers: req.headers
     });
 
     if (file.size === 0 || file.buffer.length === 0) {
+      console.error('Archivo vacío recibido');
       return res.status(400).json({ error: 'El archivo está vacío' });
     }
 
+    if (file.size < 1000000) { // 1MB
+      console.error('Archivo demasiado pequeño:', file.size);
+      return res.status(400).json({ error: 'El archivo debe ser al menos 1MB' });
+    }
+
     if (!file.mimetype.startsWith('video/')) {
+      console.error('Tipo de archivo no válido:', file.mimetype);
       return res.status(400).json({ error: 'El archivo debe ser un video' });
     }
 
@@ -34,16 +45,37 @@ export const uploadFile = async (req: Request, res: Response) => {
       mimetype: file.mimetype
     });
 
-    const url = await b2Service.uploadFile(
-      file.buffer,
-      fileName,
-      file.mimetype
-    );
+    try {
+      const url = await b2Service.uploadFile(
+        file.buffer,
+        fileName,
+        file.mimetype
+      );
 
-    console.log('Subida completada:', { url });
-    res.json({ url });
+      console.log('Subida completada:', { url });
+
+      // Verificar que el archivo sea accesible
+      const fileCheck = await fetch(url, { method: 'HEAD' });
+      if (!fileCheck.ok) {
+        throw new Error('El archivo subido no es accesible');
+      }
+
+      console.log('Archivo verificado:', {
+        status: fileCheck.status,
+        contentType: fileCheck.headers.get('content-type'),
+        contentLength: fileCheck.headers.get('content-length')
+      });
+
+      res.json({ url });
+    } catch (error) {
+      console.error('Error al subir a B2:', error);
+      throw error;
+    }
   } catch (error) {
     console.error('Error detallado en uploadFile:', error);
-    res.status(500).json({ error: 'Error al subir el archivo' });
+    res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Error al subir el archivo',
+      details: error instanceof Error ? error.stack : undefined
+    });
   }
 }; 
