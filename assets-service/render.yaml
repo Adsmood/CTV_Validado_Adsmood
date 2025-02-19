@@ -14,9 +14,11 @@ services:
       - key: B2_BUCKET_ID
         value: CTVAds
       - key: B2_FILE_URL
-        value: https://f005.backblazeb2.com/file/CTVAds
+        value: https://f002.backblazeb2.com/file/CTVAds
       - key: PORT
         value: 3001
+      - key: NODE_ENV
+        value: production
       - key: ALLOWED_ORIGINS
         value: http://localhost:3000,https://adsmood-ctv-ads-2025.onrender.com
     autoDeploy: true
