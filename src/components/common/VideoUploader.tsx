@@ -1,12 +1,19 @@
-import React from 'react';
-import { Box, Dialog, IconButton, Tooltip } from '@mui/material';
-import { VideoCall as VideoIcon } from '@mui/icons-material';
+import React, { useState } from 'react';
+import { Box, Dialog, IconButton, Tooltip, Stack, Slider } from '@mui/material';
+import { VideoCall as VideoIcon, ZoomIn, CropFree } from '@mui/icons-material';
 import FileUploader from './FileUploader';
 import { useEditorStore } from '../../stores/editorStore';
 
 const VideoUploader: React.FC = () => {
   const [open, setOpen] = React.useState(false);
-  const setBackground = useEditorStore((state) => state.setBackground);
+  const { background, setBackground } = useEditorStore((state) => ({
+    background: state.background,
+    setBackground: state.setBackground,
+  }));
+  const [style, setStyle] = useState({
+    scale: 1,
+    position: { x: 50, y: 50 },
+  });
 
   const handleFileAccepted = async (file: File) => {
     try {
@@ -66,8 +73,24 @@ const VideoUploader: React.FC = () => {
     }
   };
 
+  const handleStyleChange = (key: 'scale' | 'position', value: any) => {
+    const newStyle = { ...style };
+    if (key === 'position') {
+      newStyle.position = { ...newStyle.position, ...value };
+    } else {
+      newStyle[key] = value;
+    }
+    setStyle(newStyle);
+    if (background) {
+      setBackground({
+        ...background,
+        style: newStyle,
+      });
+    }
+  };
+
   return (
-    <>
+    <Stack spacing={1}>
       <Tooltip title="Añadir Video" placement="right">
         <IconButton
           onClick={() => setOpen(true)}
@@ -79,6 +102,49 @@ const VideoUploader: React.FC = () => {
           <VideoIcon />
         </IconButton>
       </Tooltip>
+
+      {background && (
+        <Box sx={{ width: 150 }}>
+          <Stack spacing={1}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <ZoomIn sx={{ mr: 1 }} />
+              <Slider
+                size="small"
+                value={style.scale}
+                min={0.1}
+                max={2}
+                step={0.1}
+                onChange={(_: Event, value: number | number[]) => 
+                  handleStyleChange('scale', Array.isArray(value) ? value[0] : value)
+                }
+              />
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <CropFree sx={{ mr: 1 }} />
+              <Slider
+                size="small"
+                value={style.position.x}
+                min={0}
+                max={100}
+                onChange={(_: Event, value: number | number[]) =>
+                  handleStyleChange('position', { x: Array.isArray(value) ? value[0] : value })
+                }
+              />
+            </Box>
+            <Slider
+              size="small"
+              value={style.position.y}
+              min={0}
+              max={100}
+              orientation="vertical"
+              sx={{ height: 100 }}
+              onChange={(_: Event, value: number | number[]) =>
+                handleStyleChange('position', { y: Array.isArray(value) ? value[0] : value })
+              }
+            />
+          </Stack>
+        </Box>
+      )}
 
       <Dialog
         open={open}
@@ -98,7 +164,7 @@ const VideoUploader: React.FC = () => {
           />
         </Box>
       </Dialog>
-    </>
+    </Stack>
   );
 };
 

@@ -162,7 +162,8 @@ export const generateVastXml = (state: Pick<EditorState, 'elements' | 'backgroun
     interactiveElements,
     background ? {
       ...background,
-      url: getMediaUrl(background.url)
+      url: getMediaUrl(background.url),
+      originalFile: undefined
     } : null,
     timeline,
     options,
@@ -212,9 +213,6 @@ export const generateVastXml = (state: Pick<EditorState, 'elements' | 'backgroun
                 <![CDATA[${getMediaUrl(format.url)}]]>
               </MediaFile>
               `).join('')}
-              <MediaFile delivery="progressive" type="video/mp4" width="1920" height="1080" maintainAspectRatio="true">
-                <![CDATA[${getMediaUrl(options.fallbackVideoUrl)}]]>
-              </MediaFile>
             </MediaFiles>
             <AdParameters><![CDATA[${JSON.stringify({
               ...interactiveCreativeData,
@@ -248,7 +246,6 @@ export const generateVastXml = (state: Pick<EditorState, 'elements' | 'backgroun
                 complete: options.completeTrackingUrl,
                 interaction: options.interactionTrackingUrl
               },
-              doubleVerify: options.doubleVerifyUrl,
               platform: options.platform
             })}]]>
           </VerificationParameters>
