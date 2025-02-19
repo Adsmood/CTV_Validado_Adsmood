@@ -11,7 +11,7 @@ services:
       - key: B2_APPLICATION_KEY
         value: K0057A6SzCLovuE8SUjN36SIGAARdXc
       - key: B2_BUCKET_ID
-        value: 4a48d8f64c1ff9a0000000001
+        value: ef1f24bd7af10fef9350021a
       - key: B2_FILE_URL
         value: https://f005.backblazeb2.com/file/CTVAds
       - key: PORT
