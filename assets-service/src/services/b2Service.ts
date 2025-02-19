@@ -37,10 +37,33 @@ class B2Service {
           'Cache-Control': 'no-cache'
         }
       });
+      
+      if (!response.ok) {
+        console.error('Error al validar archivo:', response.status);
+        return false;
+      }
+
       const contentType = response.headers.get('content-type');
-      return response.ok && (contentType?.includes('video') || contentType?.includes('mp4') || false);
+      const contentLength = response.headers.get('content-length');
+
+      console.log('Validación de archivo:', {
+        url,
+        contentType,
+        contentLength
+      });
+
+      // Validar por tipo de contenido
+      if (contentType?.includes('video/')) {
+        // Para videos, verificar tamaño mínimo
+        return parseInt(contentLength || '0') >= 1000000; // 1MB
+      } else if (contentType?.includes('image/')) {
+        // Para imágenes, verificar que no estén vacías
+        return parseInt(contentLength || '0') >= 1024; // 1KB
+      }
+
+      return false;
     } catch (error) {
-      console.error('Error validating file:', error);
+      console.error('Error validando archivo:', error);
       return false;
     }
   }
@@ -60,6 +83,15 @@ class B2Service {
 
       if (buffer.length === 0) {
         throw new Error('Buffer vacío');
+      }
+
+      // Validar tamaño mínimo según tipo de archivo
+      if (contentType.startsWith('video/') && buffer.length < 1000000) {
+        throw new Error('Los archivos de video deben ser al menos 1MB');
+      }
+
+      if (contentType.startsWith('image/') && buffer.length < 1024) {
+        throw new Error('Las imágenes deben ser al menos 1KB');
       }
 
       console.log('Subiendo archivo a B2...');

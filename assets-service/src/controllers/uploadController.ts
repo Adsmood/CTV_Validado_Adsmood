@@ -26,14 +26,21 @@ export const uploadFile = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'El archivo está vacío' });
     }
 
-    if (file.size < 1000000) { // 1MB
-      console.error('Archivo demasiado pequeño:', file.size);
-      return res.status(400).json({ error: 'El archivo debe ser al menos 1MB' });
+    // Validar tamaño mínimo solo para videos
+    if (file.mimetype.startsWith('video/') && file.size < 1000000) { // 1MB
+      console.error('Video demasiado pequeño:', file.size);
+      return res.status(400).json({ error: 'Los archivos de video deben ser al menos 1MB' });
     }
 
-    if (!file.mimetype.startsWith('video/')) {
+    // Para imágenes, solo verificar que no estén vacías
+    if (file.mimetype.startsWith('image/') && file.size < 1024) { // 1KB
+      console.error('Imagen demasiado pequeña:', file.size);
+      return res.status(400).json({ error: 'Las imágenes deben ser al menos 1KB' });
+    }
+
+    if (!file.mimetype.startsWith('video/') && !file.mimetype.startsWith('image/')) {
       console.error('Tipo de archivo no válido:', file.mimetype);
-      return res.status(400).json({ error: 'El archivo debe ser un video' });
+      return res.status(400).json({ error: 'El archivo debe ser un video o una imagen' });
     }
 
     const fileExtension = path.extname(file.originalname);
