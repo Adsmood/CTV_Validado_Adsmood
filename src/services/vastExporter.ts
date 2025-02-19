@@ -66,6 +66,26 @@ const generateInteractiveWrapper = (
   vastOptions: VastOptions,
   platform?: string
 ) => {
+  // Ajustar el tamaño y posición del video para full screen
+  const processedElements = elements.map(el => {
+    if (el.type === 'video') {
+      return {
+        ...el,
+        position: { x: 0, y: 0 },
+        size: { width: 1920, height: 1080 },
+        content: {
+          ...el.content,
+          style: {
+            ...el.content.style,
+            scale: 1,
+            position: { x: 50, y: 50 }
+          }
+        }
+      };
+    }
+    return el;
+  });
+
   return {
     version: "1.0",
     type: "CTV-Interactive",
@@ -73,15 +93,15 @@ const generateInteractiveWrapper = (
     layout: {
       aspectRatio: "16:9",
       videoPosition: {
-        left: "20px",
-        width: "60%"
+        left: "0",
+        width: "100%"
       },
       safeZones: {
         title: { top: "5%", height: "15%" },
         action: { bottom: "10%", height: "20%" }
       }
     },
-    elements,
+    elements: processedElements,
     background,
     timeline,
     tracking: {
@@ -95,7 +115,7 @@ const generateInteractiveWrapper = (
     },
     fallback: {
       enabled: true,
-      videoUrl: `${vastOptions.baseUrl}${vastOptions.fallbackVideoUrl}`
+      videoUrl: vastOptions.fallbackVideoUrl
     }
   };
 };
