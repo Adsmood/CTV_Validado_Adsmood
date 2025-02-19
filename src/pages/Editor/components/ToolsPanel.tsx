@@ -128,7 +128,8 @@ const ToolsPanel: React.FC = () => {
         ...editorState,
         background: editorState.background ? {
           ...editorState.background,
-          url: b2Url
+          url: b2Url,
+          type: 'video' as const  // Aseguramos que el tipo sea literal 'video'
         } : null,
         elements: editorState.elements.map(el => ({
           ...el,
