@@ -100,75 +100,40 @@ const ToolsPanel: React.FC = () => {
         return;
       }
 
-      let file: File;
+      if (!originalFile?.type.startsWith('video/')) {
+        alert('El fondo debe ser un video para exportar el VAST.');
+        return;
+      }
+
       let b2Url: string;
       
-      if (originalFile) {
-        console.log('Usando archivo original:', {
-          name: originalFile.name,
-          size: originalFile.size,
-          type: originalFile.type
-        });
-
-        // Si es un video, subir a B2
-        if (originalFile.type.startsWith('video/')) {
-          if (originalFile.size < 1000000) {
-            throw new Error('El archivo de video debe ser al menos 1MB');
-          }
-          const formData = new FormData();
-          formData.append('file', originalFile);
-          const response = await fetch('https://assets-service-hm83.onrender.com/api/assets/upload', {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Error al subir el video a B2');
-          }
-
-          const data = await response.json();
-          b2Url = data.url;
-        } else {
-          // Si es una imagen, usar la URL directamente
-          b2Url = backgroundUrl;
-        }
-      } else {
-        console.log('URL del video:', backgroundUrl);
-        // Convertir la URL blob a File
-        const response = await fetch(backgroundUrl);
-        const blob = await response.blob();
-        
-        file = new File([blob], 'background-video.mp4', { 
-          type: 'video/mp4',
-          lastModified: new Date().getTime()
-        });
-
-        if (file.type.startsWith('video/') && file.size < 1000000) {
-          throw new Error('El archivo de video debe ser al menos 1MB');
-        }
-
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        const response2 = await fetch('https://assets-service-hm83.onrender.com/api/assets/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response2.ok) {
-          const errorData = await response2.json();
-          throw new Error(errorData.error || 'Error al subir el archivo a B2');
-        }
-
-        const data = await response2.json();
-        b2Url = data.url;
+      // Siempre subir el video a B2
+      if (originalFile.size < 1000000) {
+        throw new Error('El archivo de video debe ser al menos 1MB');
       }
+
+      console.log('Subiendo video a B2...');
+      const formData = new FormData();
+      formData.append('file', originalFile);
+      const response = await fetch('https://assets-service-hm83.onrender.com/api/assets/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al subir el video a B2');
+      }
+
+      const data = await response.json();
+      b2Url = data.url;
 
       // Verificar que tenemos una URL válida
       if (!b2Url) {
         throw new Error('No se pudo obtener la URL del archivo');
       }
+
+      console.log('Video subido exitosamente:', b2Url);
 
       // Crear una copia del estado del editor con las URLs de B2
       const editorStateWithB2 = {
@@ -216,6 +181,7 @@ const ToolsPanel: React.FC = () => {
         isB2Url: true
       };
 
+      console.log('Generando VAST XML...');
       const vastXml = generateVastXml(editorStateWithB2, options);
       const xmlBlob = new Blob([vastXml], { type: 'application/xml' });
       const url = URL.createObjectURL(xmlBlob);
@@ -226,9 +192,11 @@ const ToolsPanel: React.FC = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+
+      console.log('VAST XML exportado exitosamente');
     } catch (error) {
       console.error('Error al exportar VAST:', error);
-      alert('Error al exportar el VAST. Por favor, intenta de nuevo.');
+      alert(error instanceof Error ? error.message : 'Error al exportar el VAST. Por favor, intenta de nuevo.');
     }
   };
 

@@ -105,50 +105,72 @@ export const generateVastXml = (state: Pick<EditorState, 'elements' | 'backgroun
   
   const getMediaUrl = (url: string) => {
     if (options.isB2Url) return url;
-    return url.startsWith('blob:') ? url : `${options.baseUrl}${url}`;
+    return url.startsWith('blob:') ? options.fallbackVideoUrl : `${options.baseUrl}${url}`;
   };
 
   // Transform elements to include tracking and CTV-specific properties
-  const interactiveElements = elements.map((el: Element): InteractiveElement => ({
-    ...el,
-    actions: {
-      onClick: `${options.baseUrl}/track/click/${el.id}`,
-      onHover: `${options.baseUrl}/track/hover/${el.id}`,
-      onFocus: `${options.baseUrl}/track/focus/${el.id}`,
-      onKeyDown: `${options.baseUrl}/track/keydown/${el.id}`,
-      onKeyUp: `${options.baseUrl}/track/keyup/${el.id}`
-    },
-    tracking: {
-      impressionUrl: `${options.baseUrl}/track/impression/${el.id}`,
-      interactionUrl: `${options.baseUrl}/track/interaction/${el.id}`
-    },
-    remoteControl: {
-      focusable: true,
-      focusOrder: elements.indexOf(el),
-      navigationRules: {
-        up: elements.find((other: Element) => 
-          other.id !== el.id && 
-          other.position.y < el.position.y && 
-          Math.abs(other.position.x - el.position.x) < 100
-        )?.id,
-        down: elements.find((other: Element) => 
-          other.id !== el.id && 
-          other.position.y > el.position.y && 
-          Math.abs(other.position.x - el.position.x) < 100
-        )?.id,
-        left: elements.find((other: Element) => 
-          other.id !== el.id && 
-          other.position.x < el.position.x && 
-          Math.abs(other.position.y - el.position.y) < 100
-        )?.id,
-        right: elements.find((other: Element) => 
-          other.id !== el.id && 
-          other.position.x > el.position.x && 
-          Math.abs(other.position.y - el.position.y) < 100
-        )?.id
-      }
+  const interactiveElements = elements.map((el: Element): InteractiveElement => {
+    // Procesar URLs en el contenido del elemento
+    const processedContent = { ...el.content };
+    if (el.type === 'video' && processedContent.src) {
+      processedContent.src = getMediaUrl(processedContent.src);
     }
-  }));
+    
+    return {
+      ...el,
+      content: processedContent,
+      actions: {
+        onClick: `${options.baseUrl}/track/click/${el.id}`,
+        onHover: `${options.baseUrl}/track/hover/${el.id}`,
+        onFocus: `${options.baseUrl}/track/focus/${el.id}`,
+        onKeyDown: `${options.baseUrl}/track/keydown/${el.id}`,
+        onKeyUp: `${options.baseUrl}/track/keyup/${el.id}`
+      },
+      tracking: {
+        impressionUrl: `${options.baseUrl}/track/impression/${el.id}`,
+        interactionUrl: `${options.baseUrl}/track/interaction/${el.id}`
+      },
+      remoteControl: {
+        focusable: true,
+        focusOrder: elements.indexOf(el),
+        navigationRules: {
+          up: elements.find((other: Element) => 
+            other.id !== el.id && 
+            other.position.y < el.position.y && 
+            Math.abs(other.position.x - el.position.x) < 100
+          )?.id,
+          down: elements.find((other: Element) => 
+            other.id !== el.id && 
+            other.position.y > el.position.y && 
+            Math.abs(other.position.x - el.position.x) < 100
+          )?.id,
+          left: elements.find((other: Element) => 
+            other.id !== el.id && 
+            other.position.x < el.position.x && 
+            Math.abs(other.position.y - el.position.y) < 100
+          )?.id,
+          right: elements.find((other: Element) => 
+            other.id !== el.id && 
+            other.position.x > el.position.x && 
+            Math.abs(other.position.y - el.position.y) < 100
+          )?.id
+        }
+      }
+    };
+  });
+
+  const processedBackground = background ? {
+    ...background,
+    url: getMediaUrl(background.url)
+  } : null;
+
+  const interactiveCreativeData = generateInteractiveWrapper(
+    interactiveElements,
+    processedBackground,
+    timeline,
+    options,
+    options.platform
+  );
 
   // Función para formatear la duración en formato HH:MM:SS
   const formatDuration = (seconds: number): string => {
@@ -158,19 +180,8 @@ export const generateVastXml = (state: Pick<EditorState, 'elements' | 'backgroun
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
   };
 
-  const interactiveCreativeData = generateInteractiveWrapper(
-    interactiveElements,
-    background ? {
-      ...background,
-      url: getMediaUrl(background.url),
-      originalFile: undefined
-    } : null,
-    timeline,
-    options,
-    options.platform
-  );
-
-  const vast = `<?xml version="1.0" encoding="UTF-8"?>
+  // Asegurarnos de que todas las URLs en el VAST sean accesibles
+  const vastXml = `<?xml version="1.0" encoding="UTF-8"?>
 <VAST version="4.2" xmlns="http://www.iab.com/VAST">
   <Ad id="adsmood-${Date.now()}">
     <InLine>
@@ -214,24 +225,12 @@ export const generateVastXml = (state: Pick<EditorState, 'elements' | 'backgroun
               </MediaFile>
               `).join('')}
             </MediaFiles>
-            <AdParameters><![CDATA[${JSON.stringify({
-              ...interactiveCreativeData,
-              fallback: {
-                ...interactiveCreativeData.fallback,
-                videoUrl: getMediaUrl(options.fallbackVideoUrl)
-              }
-            })}]]></AdParameters>
+            <AdParameters><![CDATA[${JSON.stringify(interactiveCreativeData)}]]></AdParameters>
           </Linear>
           <CreativeExtensions>
             <CreativeExtension type="AdsmoodInteractive">
               <InteractiveCreativeData>
-                <![CDATA[${JSON.stringify({
-                  ...interactiveCreativeData,
-                  fallback: {
-                    ...interactiveCreativeData.fallback,
-                    videoUrl: getMediaUrl(options.fallbackVideoUrl)
-                  }
-                })}]]>
+                <![CDATA[${JSON.stringify(interactiveCreativeData)}]]>
               </InteractiveCreativeData>
             </CreativeExtension>
           </CreativeExtensions>
@@ -255,7 +254,7 @@ export const generateVastXml = (state: Pick<EditorState, 'elements' | 'backgroun
   </Ad>
 </VAST>`;
 
-  return vast;
+  return vastXml;
 };
 
 export const validateVastXml = (xml: string): { isValid: boolean; errors: string[] } => {
