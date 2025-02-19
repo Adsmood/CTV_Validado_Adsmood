@@ -3,7 +3,6 @@ import { devtools, persist } from 'zustand/middleware';
 import { useEditorStore } from './editorStore';
 import { v4 as uuidv4 } from 'uuid';
 import type { Element, Background } from './editorStore';
-import html2canvas from 'html2canvas';
 
 export interface Project {
   id: string;
