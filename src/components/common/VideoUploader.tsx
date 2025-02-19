@@ -8,7 +8,48 @@ const VideoUploader: React.FC = () => {
   const [open, setOpen] = useState(false);
   const addElement = useEditorStore((state) => state.addElement);
 
+  const verifyVideo = (url: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      
+      const cleanup = () => {
+        video.removeEventListener('loadedmetadata', onLoad);
+        video.removeEventListener('error', onError);
+        video.src = '';
+        video.remove();
+      };
+
+      const onLoad = () => {
+        console.log('Video verificado:', {
+          duration: video.duration,
+          videoWidth: video.videoWidth,
+          videoHeight: video.videoHeight
+        });
+        cleanup();
+        resolve();
+      };
+
+      const onError = () => {
+        cleanup();
+        reject(new Error('El archivo de video no es válido o está corrupto'));
+      };
+
+      video.addEventListener('loadedmetadata', onLoad);
+      video.addEventListener('error', onError);
+      
+      // Establecer un timeout por si la carga tarda demasiado
+      const timeoutId = setTimeout(() => {
+        cleanup();
+        reject(new Error('Tiempo de espera agotado al cargar el video'));
+      }, 10000); // 10 segundos de timeout
+
+      video.src = url;
+    });
+  };
+
   const handleFileAccepted = async (file: File) => {
+    let url: string | null = null;
+    
     try {
       console.log('Archivo recibido:', {
         name: file.name,
@@ -25,8 +66,11 @@ const VideoUploader: React.FC = () => {
         throw new Error('El archivo debe ser un video.');
       }
 
+      // Leer el archivo como ArrayBuffer
+      const arrayBuffer = await file.arrayBuffer();
+      
       // Crear un Blob con el archivo original
-      const videoBlob = new Blob([file], { type: file.type });
+      const videoBlob = new Blob([arrayBuffer], { type: file.type });
       console.log('Blob creado:', {
         size: videoBlob.size,
         type: videoBlob.type
@@ -38,32 +82,16 @@ const VideoUploader: React.FC = () => {
       }
 
       // Crear URL del Blob
-      const url = URL.createObjectURL(videoBlob);
+      url = URL.createObjectURL(videoBlob);
       console.log('URL creada:', url);
 
       // Verificar que el video sea reproducible
-      try {
-        const video = document.createElement('video');
-        video.src = url;
-        await new Promise((resolve, reject) => {
-          video.onloadedmetadata = resolve;
-          video.onerror = reject;
-        });
-        console.log('Video verificado:', {
-          duration: video.duration,
-          videoWidth: video.videoWidth,
-          videoHeight: video.videoHeight
-        });
-      } catch (error) {
-        console.error('Error al verificar el video:', error);
-        URL.revokeObjectURL(url);
-        throw new Error('El archivo de video no es válido o está corrupto');
-      }
+      await verifyVideo(url);
 
       // Agregar el elemento
       addElement('video', {
         src: url,
-        originalFile: file, // Guardamos el archivo original sin modificar
+        originalFile: file,
         metadata: {
           name: file.name,
           size: file.size,
@@ -78,6 +106,9 @@ const VideoUploader: React.FC = () => {
 
       setOpen(false);
     } catch (error) {
+      if (url) {
+        URL.revokeObjectURL(url);
+      }
       console.error('Error al procesar el video:', error);
       alert(error instanceof Error ? error.message : 'Error al procesar el video');
     }
