@@ -4,15 +4,15 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: assets-service/ $ npm install && npm run build
-    startCommand: assets-service/ $ npm start
+    buildCommand: npm install && npm run build
+    startCommand: npm start
     envVars:
       - key: B2_APPLICATION_KEY_ID
         value: 005ff4da1ff302a0000000002
       - key: B2_APPLICATION_KEY
         value: K0057A6SzCLovuE8SUjN36SIGAARdXc
       - key: B2_BUCKET_ID
-        value: 4a48d8f64c1ff9a0000000001
+        value: ef1f24bd7af10fef9350021a
       - key: B2_FILE_URL
         value: https://f005.backblazeb2.com/file/CTVAds
       - key: PORT
@@ -20,6 +20,6 @@ services:
       - key: NODE_ENV
         value: production
       - key: ALLOWED_ORIGINS
-        value: https://ctv-validado-adsmood.onrender.com
+        value: https://assets-service-hm83.onrender.com,https://adsmood-ctv-ads-2025.onrender.com
     autoDeploy: true
     rootDirectory: assets-service 
