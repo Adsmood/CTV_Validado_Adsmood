@@ -135,15 +135,20 @@ const VideoUploader: React.FC = () => {
 
       setUploadProgress('Agregando elemento y estableciendo fondo...');
       
-      // Establecer como fondo
-      setBackground({
-        url,
-        type: 'video',
+      // Agregar como elemento
+      addElement('video', {
+        src: url,
+        originalFile: file,
+        metadata: {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified
+        },
         style: {
           scale: 1,
-          position: { x: 50, y: 50 },
-        },
-        originalFile: file
+          position: { x: 50, y: 50 }
+        }
       });
 
       setUploadProgress('¡Completado!');
