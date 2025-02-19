@@ -1,5 +1,5 @@
 import B2 from 'backblaze-b2';
-import { config } from '../config.js';
+import { config } from '../config';
 
 class B2Service {
   private b2: B2;
@@ -27,6 +27,16 @@ class B2Service {
     }
   }
 
+  async validateUploadedFile(url: string): Promise<boolean> {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      return response.ok && (response.headers.get('content-type')?.includes('video') ?? false);
+    } catch (error) {
+      console.error('Error validating file:', error);
+      return false;
+    }
+  }
+
   async uploadFile(buffer: Buffer, fileName: string, contentType: string): Promise<string> {
     try {
       if (!this.uploadUrl || !this.uploadAuthToken) {
@@ -39,9 +49,18 @@ class B2Service {
         fileName,
         data: buffer,
         contentType,
+        // Los headers personalizados se manejarán a nivel de bucket
       });
 
-      return `${config.b2.fileUrl}/${response.data.fileName}`;
+      const fileUrl = `${config.b2.fileUrl}/${response.data.fileName}`;
+      
+      // Validar que el archivo se subió correctamente
+      const isValid = await this.validateUploadedFile(fileUrl);
+      if (!isValid) {
+        throw new Error('File upload validation failed');
+      }
+
+      return fileUrl;
     } catch (error: unknown) {
       console.error('Error uploading file to B2:', error);
       if (error instanceof Error && 
@@ -50,6 +69,18 @@ class B2Service {
         return this.uploadFile(buffer, fileName, contentType);
       }
       throw new Error('Failed to upload file to B2');
+    }
+  }
+
+  async getFileInfo(fileName: string): Promise<any> {
+    try {
+      const response = await this.b2.getFileInfo({
+        fileId: fileName
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error getting file info:', error);
+      throw new Error('Failed to get file info');
     }
   }
 }
