@@ -7,13 +7,15 @@ import { useEditorStore } from '../../stores/editorStore';
 const VideoUploader: React.FC = () => {
   const [open, setOpen] = React.useState(false);
   const addElement = useEditorStore((state) => state.addElement);
+  const setBackground = useEditorStore((state) => state.setBackground);
 
   const handleFileAccepted = async (file: File) => {
     try {
-      console.log('Archivo recibido:', {
+      console.log('Archivo original recibido:', {
         name: file.name,
         size: file.size,
-        type: file.type
+        type: file.type,
+        lastModified: file.lastModified
       });
 
       // Validar tamaño mínimo
@@ -32,6 +34,13 @@ const VideoUploader: React.FC = () => {
         lastModified: file.lastModified
       });
 
+      console.log('Copia del archivo creada:', {
+        name: fileCopy.name,
+        size: fileCopy.size,
+        type: fileCopy.type,
+        lastModified: fileCopy.lastModified
+      });
+
       // Validar que la copia mantenga el tamaño
       if (fileCopy.size !== file.size) {
         throw new Error('Error al procesar el archivo.');
@@ -40,13 +49,17 @@ const VideoUploader: React.FC = () => {
       const url = URL.createObjectURL(fileCopy);
       console.log('URL creada:', url);
 
-      addElement('video', {
-        src: url,
+      // Establecer como fondo en lugar de agregar como elemento
+      setBackground({
+        url,
+        type: 'video',
         style: {
           scale: 1,
           position: { x: 50, y: 50 },
         },
+        originalFile: fileCopy // Guardar el archivo original
       });
+
       setOpen(false);
     } catch (error) {
       console.error('Error al procesar el video:', error);

@@ -13,13 +13,14 @@ export interface Size {
   height: number;
 }
 
-interface Background {
+export interface Background {
   url: string;
-  type: 'image' | 'video';
+  type: 'video';
   style: {
     scale: number;
     position: { x: number; y: number };
   };
+  originalFile?: File;
 }
 
 export interface Element {

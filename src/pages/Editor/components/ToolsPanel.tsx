@@ -92,52 +92,64 @@ const ToolsPanel: React.FC = () => {
     try {
       // Obtener el archivo de video del background
       const backgroundUrl = editorState.background?.url;
+      const originalFile = editorState.background?.originalFile;
+      
       if (!backgroundUrl) {
         console.error('No hay video de fondo');
         return;
       }
 
-      console.log('URL del video:', backgroundUrl);
-
-      // Convertir la URL blob a File
-      const response = await fetch(backgroundUrl);
-      const blob = await response.blob();
+      let file: File;
       
-      // Validar el tamaño del blob
-      if (blob.size < 1000000) { // Menos de 1MB
-        console.error('El archivo es demasiado pequeño:', {
+      if (originalFile) {
+        console.log('Usando archivo original:', {
+          name: originalFile.name,
+          size: originalFile.size,
+          type: originalFile.type
+        });
+        file = originalFile;
+      } else {
+        console.log('URL del video:', backgroundUrl);
+        // Convertir la URL blob a File
+        const response = await fetch(backgroundUrl);
+        const blob = await response.blob();
+        
+        // Validar el tamaño del blob
+        if (blob.size < 1000000) { // Menos de 1MB
+          console.error('El archivo es demasiado pequeño:', {
+            size: blob.size,
+            type: blob.type
+          });
+          throw new Error('El archivo de video es demasiado pequeño. Debe ser al menos 1MB.');
+        }
+
+        console.log('Blob obtenido:', {
           size: blob.size,
-          type: blob.type
+          type: blob.type,
+          lastModified: new Date().getTime()
         });
-        throw new Error('El archivo de video es demasiado pequeño. Debe ser al menos 1MB.');
-      }
-
-      console.log('Blob obtenido:', {
-        size: blob.size,
-        type: blob.type,
-        lastModified: new Date().getTime()
-      });
-      
-      // Asegurar que el tipo MIME sea video/mp4 y preservar el blob original
-      const file = new File([blob], 'background-video.mp4', { 
-        type: 'video/mp4',
-        lastModified: new Date().getTime()
-      });
-      
-      console.log('Archivo creado:', {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        lastModified: file.lastModified
-      });
-
-      // Validar el tamaño del archivo
-      if (file.size !== blob.size) {
-        console.error('El tamaño del archivo no coincide con el blob:', {
-          blobSize: blob.size,
-          fileSize: file.size
+        
+        // Asegurar que el tipo MIME sea video/mp4 y preservar el blob original
+        file = new File([blob], 'background-video.mp4', { 
+          type: 'video/mp4',
+          lastModified: new Date().getTime()
         });
-        throw new Error('Error al procesar el archivo de video.');
+        
+        console.log('Archivo creado:', {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified
+        });
+
+        // Validar el tamaño del archivo
+        if (file.size !== blob.size) {
+          console.error('El tamaño del archivo no coincide con el blob:', {
+            blobSize: blob.size,
+            fileSize: file.size
+          });
+          throw new Error('Error al procesar el archivo de video.');
+        }
       }
 
       // Subir el archivo a B2 con FormData
