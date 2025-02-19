@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Box, Dialog, IconButton, Tooltip } from '@mui/material';
+import { Box, Dialog, IconButton, Tooltip, CircularProgress, Typography } from '@mui/material';
 import { VideoCall as VideoIcon } from '@mui/icons-material';
 import FileUploader from './FileUploader';
 import { useEditorStore } from '../../stores/editorStore';
 
 const VideoUploader: React.FC = () => {
   const [open, setOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
   const addElement = useEditorStore((state) => state.addElement);
 
   const verifyVideo = (url: string): Promise<void> => {
@@ -39,11 +41,10 @@ const VideoUploader: React.FC = () => {
       video.addEventListener('loadedmetadata', onLoad);
       video.addEventListener('error', onError);
       
-      // Establecer un timeout por si la carga tarda demasiado
       timeoutId = window.setTimeout(() => {
         cleanup();
         reject(new Error('Tiempo de espera agotado al cargar el video'));
-      }, 10000); // 10 segundos de timeout
+      }, 30000); // 30 segundos de timeout
 
       video.src = url;
     });
@@ -53,6 +54,9 @@ const VideoUploader: React.FC = () => {
     let url: string | null = null;
     
     try {
+      setUploading(true);
+      setUploadProgress('Procesando archivo...');
+
       console.log('Archivo recibido:', {
         name: file.name,
         size: file.size,
@@ -68,29 +72,28 @@ const VideoUploader: React.FC = () => {
         throw new Error('El archivo debe ser un video.');
       }
 
-      // Leer el archivo como ArrayBuffer
+      setUploadProgress('Leyendo archivo...');
       const arrayBuffer = await file.arrayBuffer();
       
-      // Crear un Blob con el archivo original
+      setUploadProgress('Creando blob...');
       const videoBlob = new Blob([arrayBuffer], { type: file.type });
       console.log('Blob creado:', {
         size: videoBlob.size,
         type: videoBlob.type
       });
 
-      // Verificar que el tamaño del Blob coincida con el archivo original
       if (videoBlob.size !== file.size) {
         throw new Error('Error al procesar el video: el tamaño no coincide');
       }
 
-      // Crear URL del Blob
+      setUploadProgress('Creando URL...');
       url = URL.createObjectURL(videoBlob);
       console.log('URL creada:', url);
 
-      // Verificar que el video sea reproducible
+      setUploadProgress('Verificando video...');
       await verifyVideo(url);
 
-      // Agregar el elemento
+      setUploadProgress('Agregando elemento...');
       addElement('video', {
         src: url,
         originalFile: file,
@@ -106,13 +109,21 @@ const VideoUploader: React.FC = () => {
         }
       });
 
-      setOpen(false);
+      setUploadProgress('¡Completado!');
+      setTimeout(() => {
+        setOpen(false);
+        setUploading(false);
+        setUploadProgress('');
+      }, 1000);
+
     } catch (error) {
       if (url) {
         URL.revokeObjectURL(url);
       }
       console.error('Error al procesar el video:', error);
       alert(error instanceof Error ? error.message : 'Error al procesar el video');
+      setUploading(false);
+      setUploadProgress('');
     }
   };
 
@@ -131,20 +142,38 @@ const VideoUploader: React.FC = () => {
 
         <Dialog
           open={open}
-          onClose={() => setOpen(false)}
+          onClose={() => !uploading && setOpen(false)}
           maxWidth="sm"
           fullWidth
         >
-          <Box sx={{ p: 2, height: 300 }}>
-            <FileUploader
-              onFileAccepted={handleFileAccepted}
-              accept={{
-                'video/*': ['.mp4', '.webm', '.ogg'],
-              }}
-              maxSize={52428800} // 50MB
-              title="Arrastra un video aquí, o haz clic para seleccionar"
-              icon={<VideoIcon />}
-            />
+          <Box sx={{ p: 2, height: 300, position: 'relative' }}>
+            {uploading ? (
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%',
+                  gap: 2
+                }}
+              >
+                <CircularProgress />
+                <Typography variant="body2" color="text.secondary">
+                  {uploadProgress}
+                </Typography>
+              </Box>
+            ) : (
+              <FileUploader
+                onFileAccepted={handleFileAccepted}
+                accept={{
+                  'video/*': ['.mp4', '.webm', '.ogg'],
+                }}
+                maxSize={52428800} // 50MB
+                title="Arrastra un video aquí, o haz clic para seleccionar"
+                icon={<VideoIcon />}
+              />
+            )}
           </Box>
         </Dialog>
       </span>
