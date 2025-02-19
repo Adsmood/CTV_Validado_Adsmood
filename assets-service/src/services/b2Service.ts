@@ -1,5 +1,5 @@
 import B2 from 'backblaze-b2';
-import { config } from '../config';
+import { config } from '../config.js';
 
 class B2Service {
   private b2: B2;
@@ -16,6 +16,31 @@ class B2Service {
   async initialize(): Promise<void> {
     try {
       await this.b2.authorize();
+      
+      // Configurar el bucket con las reglas CORS
+      try {
+        await this.b2.updateBucket({
+          bucketId: config.b2.bucketId,
+          bucketType: 'allPublic',
+          corsRules: [
+            {
+              allowedOrigins: ["*"],
+              allowedHeaders: ["*"],
+              allowedOperations: [
+                "b2_download_file_by_id",
+                "b2_download_file_by_name"
+              ],
+              exposeHeaders: ["x-bz-content-sha1"],
+              maxAgeSeconds: 3600
+            }
+          ],
+          lifecycleRules: []
+        });
+        console.log('Bucket configuration updated successfully');
+      } catch (bucketError) {
+        console.error('Error updating bucket configuration:', bucketError);
+      }
+
       const response = await this.b2.getUploadUrl({
         bucketId: config.b2.bucketId,
       });
@@ -29,8 +54,14 @@ class B2Service {
 
   async validateUploadedFile(url: string): Promise<boolean> {
     try {
-      const response = await fetch(url, { method: 'HEAD' });
-      return response.ok && (response.headers.get('content-type')?.includes('video') ?? false);
+      const response = await fetch(url, { 
+        method: 'HEAD',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
+      const contentType = response.headers.get('content-type');
+      return response.ok && (contentType?.includes('video') || contentType?.includes('mp4') || false);
     } catch (error) {
       console.error('Error validating file:', error);
       return false;
@@ -49,17 +80,25 @@ class B2Service {
         fileName,
         data: buffer,
         contentType,
-        // Los headers personalizados se manejarán a nivel de bucket
+        info: {
+          'Content-Disposition': 'inline',
+          'Cache-Control': 'public, max-age=31536000'
+        }
       });
 
       const fileUrl = `${config.b2.fileUrl}/${response.data.fileName}`;
       
+      // Esperar un momento para que el archivo esté disponible
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       // Validar que el archivo se subió correctamente
       const isValid = await this.validateUploadedFile(fileUrl);
       if (!isValid) {
+        console.error('File validation failed:', fileUrl);
         throw new Error('File upload validation failed');
       }
 
+      console.log('File uploaded successfully:', fileUrl);
       return fileUrl;
     } catch (error: unknown) {
       console.error('Error uploading file to B2:', error);
