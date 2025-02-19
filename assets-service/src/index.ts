@@ -11,7 +11,7 @@ const app = express();
 // Configuración de CORS
 app.use(cors({
   origin: config.cors.allowedOrigins,
-  methods: ['POST'],
+  methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type'],
 }));
 
@@ -26,20 +26,25 @@ const upload = multer({
   },
 });
 
-// Rutas
-app.post('/api/assets/upload', upload.single('file'), uploadFile);
-
 // Ruta de estado
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Rutas
+app.post('/api/assets/upload', upload.single('file'), uploadFile);
+
 // Inicialización
 const start = async () => {
   try {
     // Inicializar B2
-    await b2Service.initialize();
-    console.log('B2 Service initialized successfully');
+    try {
+      await b2Service.initialize();
+      console.log('B2 Service initialized successfully');
+    } catch (error) {
+      console.error('Warning: B2 Service initialization failed:', error);
+      // Continuamos con la inicialización del servidor
+    }
 
     // Iniciar servidor
     app.listen(config.server.port, () => {
