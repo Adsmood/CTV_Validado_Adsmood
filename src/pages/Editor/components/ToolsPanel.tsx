@@ -97,29 +97,44 @@ const ToolsPanel: React.FC = () => {
         return;
       }
 
+      console.log('URL del video:', backgroundUrl);
+
       // Convertir la URL blob a File
       const response = await fetch(backgroundUrl);
       const blob = await response.blob();
-      console.log('Tamaño del blob:', blob.size);
-      
-      // Preservar el tipo MIME original
-      const file = new File([blob], 'background-video.mp4', { 
-        type: blob.type || 'video/mp4',
+      console.log('Blob obtenido:', {
+        size: blob.size,
+        type: blob.type,
+        lastModified: new Date().getTime()
       });
-      console.log('Tamaño del archivo:', file.size);
+      
+      // Asegurar que el tipo MIME sea video/mp4
+      const file = new File([blob], 'background-video.mp4', { 
+        type: 'video/mp4',
+        lastModified: new Date().getTime()
+      });
+      
+      console.log('Archivo creado:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: file.lastModified
+      });
 
       // Subir el archivo a B2 con FormData
       const formData = new FormData();
       formData.append('file', file);
       
-      console.log('Iniciando subida a B2...');
+      console.log('FormData creado, iniciando subida a B2...');
       const response2 = await fetch('https://assets-service-hm83.onrender.com/api/assets/upload', {
         method: 'POST',
         body: formData,
       });
       
       if (!response2.ok) {
-        throw new Error('Error al subir el archivo a B2');
+        const errorData = await response2.json();
+        console.error('Error del servidor:', errorData);
+        throw new Error(errorData.error || 'Error al subir el archivo a B2');
       }
       
       const data = await response2.json();
