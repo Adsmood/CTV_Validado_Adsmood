@@ -88,23 +88,6 @@ const ToolsPanel: React.FC = () => {
     addElement(type, defaultContent[type]);
   };
 
-  const uploadToB2 = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const response = await fetch('https://assets-service-hm83.onrender.com/api/assets/upload', {
-      method: 'POST',
-      body: formData,
-    });
-    
-    if (!response.ok) {
-      throw new Error('Error al subir el archivo a B2');
-    }
-    
-    const data = await response.json();
-    return data.url;
-  };
-
   const handleExportVast = async () => {
     try {
       // Obtener el archivo de video del background
