@@ -4,8 +4,8 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: npm install
-    startCommand: npm start
+    buildCommand: assets-service/ $ npm install && npm run build
+    startCommand: assets-service/ $ npm start
     envVars:
       - key: B2_APPLICATION_KEY_ID
         value: 005ff4da1ff302a0000000002
