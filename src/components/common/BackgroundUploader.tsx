@@ -11,6 +11,7 @@ export interface Background {
     scale: number;
     position: { x: number; y: number };
   };
+  originalFile: File;
 }
 
 const BackgroundUploader: React.FC = () => {
@@ -27,10 +28,16 @@ const BackgroundUploader: React.FC = () => {
   const handleFileAccepted = async (file: File) => {
     try {
       const url = URL.createObjectURL(file);
+      console.log('URL creada:', url);
+
       setBackground({
         url,
-        type: file.type.startsWith('video/') ? 'video' : 'image',
-        style,
+        type: 'video',
+        style: {
+          scale: 1,
+          position: { x: 50, y: 50 },
+        },
+        originalFile: file
       });
       setOpen(false);
     } catch (error) {

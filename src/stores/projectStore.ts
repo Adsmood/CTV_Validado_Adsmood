@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import type { Project } from '../types/project';
 import { useEditorStore } from './editorStore';
+import { v4 as uuidv4 } from 'uuid';
+import type { Element, Background } from './editorStore';
+import html2canvas from 'html2canvas';
 
 interface ProjectState {
   projects: Project[];
@@ -237,7 +240,7 @@ const useProjectStore = create<ProjectState>()(
             extractVideoRefs(processedBackground);
             
             const project = {
-              id: get().currentProject?.id || `project-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              id: get().currentProject?.id || uuidv4(),
               name,
               lastModified: Date.now(),
               thumbnail,

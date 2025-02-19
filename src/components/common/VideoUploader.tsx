@@ -6,7 +6,6 @@ import { useEditorStore } from '../../stores/editorStore';
 
 const VideoUploader: React.FC = () => {
   const [open, setOpen] = React.useState(false);
-  const addElement = useEditorStore((state) => state.addElement);
   const setBackground = useEditorStore((state) => state.setBackground);
 
   const handleFileAccepted = async (file: File) => {
