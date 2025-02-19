@@ -1,0 +1,101 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --editor-bg: #1e1e1e;
+  --panel-bg: #252526;
+  --border-color: #333;
+  --selected-color: #2196f3;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  background-color: var(--editor-bg);
+  color: #fff;
+}
+
+#root {
+  height: 100vh;
+  width: 100vw;
+}
+
+.editor-container {
+  display: flex;
+  height: 100vh;
+  background-color: var(--editor-bg);
+}
+
+.tools-panel {
+  width: 60px;
+  background-color: var(--panel-bg);
+  border-right: 1px solid var(--border-color);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.canvas-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.layers-panel {
+  width: 250px;
+  background-color: var(--panel-bg);
+  border-left: 1px solid var(--border-color);
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.timeline {
+  height: 150px;
+  background-color: var(--panel-bg);
+  border-top: 1px solid var(--border-color);
+  padding: 16px;
+}
+
+.canvas {
+  position: relative;
+  flex: 1;
+  margin: 20px;
+  background-color: #000;
+  border-radius: 4px;
+  overflow: hidden;
+  aspect-ratio: 16/9;
+}
+
+.element {
+  position: absolute;
+  cursor: move;
+  user-select: none;
+}
+
+.element.selected {
+  outline: 2px solid var(--selected-color);
+}
+
+.element-controls {
+  position: absolute;
+  top: -24px;
+  right: 0;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.element:hover .element-controls {
+  opacity: 1;
+} 
