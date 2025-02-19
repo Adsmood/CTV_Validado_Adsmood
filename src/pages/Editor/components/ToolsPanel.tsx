@@ -117,10 +117,30 @@ const ToolsPanel: React.FC = () => {
       // Convertir la URL blob a File
       const response = await fetch(backgroundUrl);
       const blob = await response.blob();
-      const file = new File([blob], 'background-video.mp4', { type: 'video/mp4' });
+      console.log('Tamaño del blob:', blob.size);
+      
+      // Preservar el tipo MIME original
+      const file = new File([blob], 'background-video.mp4', { 
+        type: blob.type || 'video/mp4',
+      });
+      console.log('Tamaño del archivo:', file.size);
 
-      // Subir el archivo a B2
-      const b2Url = await uploadToB2(file);
+      // Subir el archivo a B2 con FormData
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      console.log('Iniciando subida a B2...');
+      const response2 = await fetch('https://assets-service-hm83.onrender.com/api/assets/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response2.ok) {
+        throw new Error('Error al subir el archivo a B2');
+      }
+      
+      const data = await response2.json();
+      const b2Url = data.url;
       console.log('Video subido a B2:', b2Url);
 
       // Crear una copia del estado del editor con las URLs de B2
