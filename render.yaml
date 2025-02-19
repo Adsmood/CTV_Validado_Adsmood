@@ -19,4 +19,4 @@ services:
       - key: NODE_ENV
         value: production
       - key: ALLOWED_ORIGINS
-        value: https://assets-service-hm83.onrender.com 
+        value: https://ctv-validado-adsmood.onrender.com 
