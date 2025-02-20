@@ -3,8 +3,9 @@ import cors from 'cors';
 import { config } from './config/config.js';
 import router from './routes/index.js';
 import { prisma } from './services/prisma.js';
+import { app } from './app';
 
-const app = express();
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
@@ -27,13 +28,17 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   });
 });
 
-const PORT = process.env.PORT || 3000;
-
 async function startServer() {
   try {
     // Verificar conexión a la base de datos
     await prisma.$connect();
     console.log('Base de datos conectada');
+    console.log('Puerto configurado:', PORT);
+    console.log('Variables de entorno:', {
+      nodeEnv: process.env.NODE_ENV,
+      port: process.env.PORT,
+      allowedOrigins: process.env.ALLOWED_ORIGINS
+    });
 
     // Iniciar servidor
     app.listen(PORT, () => {
