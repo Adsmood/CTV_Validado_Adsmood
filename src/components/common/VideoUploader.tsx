@@ -3,16 +3,28 @@ import { Box, Dialog, IconButton, Tooltip, CircularProgress, Typography } from '
 import { VideoCall as VideoIcon } from '@mui/icons-material';
 import FileUploader from './FileUploader';
 import { useEditorStore } from '../../stores/editorStore';
+import useProjectStore from '../../stores/projectStore';
 
 const VideoUploader: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
   const addElement = useEditorStore((state) => state.addElement);
+  const currentProject = useProjectStore((state) => state.currentProject);
 
   const uploadToB2 = async (file: File): Promise<string> => {
     const formData = new FormData();
-    formData.append('file', file);
+    
+    // Generar nombre de archivo con el nombre del proyecto
+    const fileExtension = file.name.split('.').pop();
+    const timestamp = Date.now();
+    const projectName = currentProject?.name || 'untitled';
+    const sanitizedProjectName = projectName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const fileName = `${sanitizedProjectName}-${timestamp}.${fileExtension}`;
+    
+    // Crear nuevo objeto File con el nombre modificado
+    const renamedFile = new File([file], fileName, { type: file.type });
+    formData.append('file', renamedFile);
 
     console.log('Preparando archivo para B2:', {
       fileName: file.name,

@@ -4,6 +4,7 @@ import cors from 'cors';
 import compression from 'compression';
 import { config } from './config.js';
 import { uploadFile } from './controllers/uploadController.js';
+import { generateDynamicVast } from './controllers/vastController.js';
 import { b2Service } from './services/b2Service.js';
 
 const app = express();
@@ -33,6 +34,9 @@ app.get('/health', (req, res) => {
 
 // Rutas
 app.post('/api/assets/upload', upload.single('file'), uploadFile);
+
+// Nueva ruta para VAST dinámico
+app.get('/api/vast/:adId', generateDynamicVast);
 
 // Inicialización
 const start = async () => {

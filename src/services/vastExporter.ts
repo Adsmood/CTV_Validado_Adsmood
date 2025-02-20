@@ -120,13 +120,17 @@ const generateInteractiveWrapper = (
   };
 };
 
-export const generateVastXml = (state: Pick<EditorState, 'elements' | 'background' | 'timeline'>, options: VastOptions): string => {
+export const generateVastXml = (state: Pick<EditorState, 'elements' | 'background' | 'timeline'>, options: VastOptions, projectName: string): string => {
   const { elements, background, timeline } = state;
   
   const getMediaUrl = (url: string) => {
     if (options.isB2Url) return url;
     return url.startsWith('blob:') ? options.fallbackVideoUrl : `${options.baseUrl}${url}`;
   };
+
+  const sanitizedProjectName = projectName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  const timestamp = Date.now();
+  const adId = `adsmood-${sanitizedProjectName}-${timestamp}`;
 
   // Transform elements to include tracking and CTV-specific properties
   const interactiveElements = elements.map((el: Element): InteractiveElement => {
@@ -203,10 +207,10 @@ export const generateVastXml = (state: Pick<EditorState, 'elements' | 'backgroun
   // Asegurarnos de que todas las URLs en el VAST sean accesibles
   const vastXml = `<?xml version="1.0" encoding="UTF-8"?>
 <VAST version="4.2" xmlns="http://www.iab.com/VAST">
-  <Ad id="adsmood-${Date.now()}">
+  <Ad id="${adId}">
     <InLine>
       <AdSystem version="2.0">Adsmood CTV Interactive</AdSystem>
-      <AdTitle>Interactive CTV Ad</AdTitle>
+      <AdTitle>${projectName}</AdTitle>
       <Description>Interactive CTV Advertisement with Enhanced Tracking</Description>
       <Error><![CDATA[${options.baseUrl}/error]]></Error>
       <Impression><![CDATA[${options.impressionUrl}]]></Impression>

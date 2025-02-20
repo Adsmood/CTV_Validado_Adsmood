@@ -13,6 +13,7 @@ import { useEditorStore } from '../../../stores/editorStore';
 import type { ElementType } from '../../../stores/editorStore';
 import VideoUploader from '../../../components/common/VideoUploader';
 import { generateVastXml } from '../../../services/vastExporter';
+import useProjectStore from '../../../stores/projectStore';
 
 const tools: { type: Exclude<ElementType, 'video'>; icon: React.ComponentType; tooltip: string }[] = [
   { type: 'button', icon: ButtonIcon, tooltip: 'Añadir Botón' },
@@ -83,6 +84,7 @@ const ToolsPanel: React.FC = () => {
     background: state.background,
     timeline: state.timeline
   }));
+  const currentProject = useProjectStore((state) => state.currentProject);
 
   const handleAddElement = (type: Exclude<ElementType, 'video'>) => {
     addElement(type, defaultContent[type]);
@@ -90,6 +92,11 @@ const ToolsPanel: React.FC = () => {
 
   const handleExportVast = async () => {
     try {
+      if (!currentProject?.name) {
+        alert('Por favor, guarda el proyecto antes de exportar el VAST.');
+        return;
+      }
+
       // Obtener el archivo de video del background
       const backgroundUrl = editorState.background?.url;
       const originalFile = editorState.background?.originalFile;
@@ -182,12 +189,12 @@ const ToolsPanel: React.FC = () => {
       };
 
       console.log('Generando VAST XML...');
-      const vastXml = generateVastXml(editorStateWithB2, options);
+      const vastXml = generateVastXml(editorStateWithB2, options, currentProject.name);
       const xmlBlob = new Blob([vastXml], { type: 'application/xml' });
       const url = URL.createObjectURL(xmlBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `adsmood-vast-${Date.now()}.xml`;
+      a.download = `adsmood-vast-${currentProject.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}.xml`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
