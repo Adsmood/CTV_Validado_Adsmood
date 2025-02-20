@@ -1,5 +1,6 @@
 import { config } from '../config/config.js';
 import { prisma } from '../services/prisma.js';
+import { generateApiKey } from '../utils/apiKey.js';
 
 // Configurar variables de entorno para testing
 process.env.NODE_ENV = 'test';
@@ -30,7 +31,8 @@ export const createTestData = async () => {
   const project = await prisma.project.create({
     data: {
       name: 'Test Project',
-      description: 'Project for testing'
+      description: 'Project for testing',
+      apiKey: generateApiKey()
     }
   });
 

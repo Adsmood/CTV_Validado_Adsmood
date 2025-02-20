@@ -1,17 +1,25 @@
 import { Request, Response } from 'express';
 import { prisma } from '../services/prisma.js';
 import type { Project, ErrorResponse, SuccessResponse } from '../types/index.js';
+import { generateApiKey } from '../utils/apiKey.js';
+import { convertPrismaProject } from '../utils/typeConverters.js';
 
 export const getProjects = async (_req: Request, res: Response<SuccessResponse<Project[]> | ErrorResponse>) => {
   try {
     const projects = await prisma.project.findMany({
       include: {
-        campaigns: true
+        campaigns: {
+          include: {
+            analytics: true
+          }
+        }
       }
     });
 
+    const formattedProjects = projects.map(convertPrismaProject);
+
     res.json({
-      data: projects
+      data: formattedProjects
     });
   } catch (error) {
     console.error('Error al obtener proyectos:', error);
@@ -29,7 +37,11 @@ export const getProject = async (req: Request, res: Response<SuccessResponse<Pro
     const project = await prisma.project.findUnique({
       where: { id },
       include: {
-        campaigns: true
+        campaigns: {
+          include: {
+            analytics: true
+          }
+        }
       }
     });
 
@@ -39,8 +51,10 @@ export const getProject = async (req: Request, res: Response<SuccessResponse<Pro
       });
     }
 
+    const formattedProject = convertPrismaProject(project);
+
     res.json({
-      data: project
+      data: formattedProject
     });
   } catch (error) {
     console.error('Error al obtener proyecto:', error);
@@ -61,18 +75,26 @@ export const createProject = async (req: Request, res: Response<SuccessResponse<
       });
     }
 
+    const apiKey = generateApiKey();
     const project = await prisma.project.create({
       data: {
         name,
-        description
+        description: description || undefined,
+        apiKey
       },
       include: {
-        campaigns: true
+        campaigns: {
+          include: {
+            analytics: true
+          }
+        }
       }
     });
 
+    const formattedProject = convertPrismaProject(project);
+
     res.status(201).json({
-      data: project,
+      data: formattedProject,
       message: 'Proyecto creado exitosamente'
     });
   } catch (error) {
@@ -99,15 +121,21 @@ export const updateProject = async (req: Request, res: Response<SuccessResponse<
       where: { id },
       data: {
         name,
-        description
+        description: description || undefined
       },
       include: {
-        campaigns: true
+        campaigns: {
+          include: {
+            analytics: true
+          }
+        }
       }
     });
 
+    const formattedProject = convertPrismaProject(project);
+
     res.json({
-      data: project,
+      data: formattedProject,
       message: 'Proyecto actualizado exitosamente'
     });
   } catch (error) {
