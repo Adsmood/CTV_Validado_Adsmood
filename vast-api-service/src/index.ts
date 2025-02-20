@@ -27,23 +27,24 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   });
 });
 
-// Inicialización
-const start = async () => {
+const PORT = process.env.PORT || 3000;
+
+async function startServer() {
   try {
     // Verificar conexión a la base de datos
     await prisma.$connect();
     console.log('Base de datos conectada');
 
     // Iniciar servidor
-    app.listen(config.server.port, () => {
-      console.log(`Servidor iniciado en puerto ${config.server.port}`);
-      console.log('Ambiente:', config.server.nodeEnv);
-      console.log('CORS habilitado para:', config.cors.allowedOrigins);
+    app.listen(PORT, () => {
+      console.log(`Servidor iniciado en puerto ${PORT}`);
+      console.log(`Ambiente: ${config.server.nodeEnv}`);
+      console.log(`CORS habilitado para: [ '${config.cors.allowedOrigins.join("', '")}' ]`);
     });
   } catch (error) {
     console.error('Error al iniciar el servidor:', error);
     process.exit(1);
   }
-};
+}
 
-start(); 
+startServer(); 
