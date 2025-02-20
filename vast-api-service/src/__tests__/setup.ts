@@ -1,4 +1,4 @@
-import { config } from '../config/config.js';
+import { beforeAll, beforeEach, afterAll } from '@jest/globals';
 import { prisma } from '../services/prisma.js';
 import { generateApiKey } from '../utils/apiKey.js';
 
