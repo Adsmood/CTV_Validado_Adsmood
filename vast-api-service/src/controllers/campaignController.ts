@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../services/prisma.js';
 import { vastService } from '../services/vastService.js';
+import { validationService } from '../services/validationService.js';
 import { analyticsService } from '../services/analyticsService.js';
 import type { Campaign, ErrorResponse, SuccessResponse } from '../types/index.js';
 
@@ -66,8 +67,8 @@ export const createCampaign = async (req: Request, res: Response<SuccessResponse
       });
     }
 
-    // Validar configuración VAST
-    const vastValidation = vastService.validateVastConfig(vastConfig);
+    // Validar configuración VAST completa
+    const vastValidation = await validationService.validateVastConfig(vastConfig);
     if (!vastValidation.isValid) {
       return res.status(400).json({
         error: 'Configuración VAST inválida',
@@ -110,7 +111,8 @@ export const updateCampaign = async (req: Request, res: Response<SuccessResponse
     const { name, videoUrl, vastConfig, status, startDate, endDate } = req.body;
 
     if (vastConfig) {
-      const vastValidation = vastService.validateVastConfig(vastConfig);
+      // Validar configuración VAST completa
+      const vastValidation = await validationService.validateVastConfig(vastConfig);
       if (!vastValidation.isValid) {
         return res.status(400).json({
           error: 'Configuración VAST inválida',
