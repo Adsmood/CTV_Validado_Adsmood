@@ -49,7 +49,7 @@ class AnalyticsService {
         }
       });
 
-      const stats = analytics.reduce((acc, curr) => {
+      const stats = analytics.reduce((acc: Record<string, number>, curr: { eventType: string; _count: { eventType: number } }) => {
         acc[curr.eventType] = curr._count.eventType;
         return acc;
       }, {} as Record<string, number>);
@@ -96,7 +96,7 @@ class AnalyticsService {
 
       const timelineMap = new Map<string, { impressions: number; completes: number }>();
 
-      analytics.forEach(record => {
+      analytics.forEach((record: { timestamp: Date; eventType: string; _count: { eventType: number } }) => {
         const date = record.timestamp.toISOString().split('T')[0];
         const current = timelineMap.get(date) || { impressions: 0, completes: 0 };
 

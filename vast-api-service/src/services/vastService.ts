@@ -1,4 +1,4 @@
-import type { Campaign, VastConfig } from '../types';
+import type { Campaign, VastConfig } from '../types/index.js';
 
 class VastService {
   private formatDuration(seconds: number): string {
@@ -11,13 +11,13 @@ class VastService {
   private generateVerificationSection(vendors?: VastConfig['verificationVendors']): string {
     if (!vendors?.length) return '';
 
-    return vendors.map(vendor => `
+    return vendors.map((vendor: VastConfig['verificationVendors'][0]) => `
       <Extension type="AdVerifications">
         <VerificationParameters>
           <![CDATA[${vendor.verificationParameters}]]>
         </VerificationParameters>
-        ${Object.entries(vendor.trackingEvents).map(([event, urls]) => 
-          urls.map(url => `<Tracking event="${event}"><![CDATA[${url}]]></Tracking>`).join('\n')
+        ${Object.entries(vendor.trackingEvents).map(([event, urls]: [string, string[]]) => 
+          urls.map((url: string) => `<Tracking event="${event}"><![CDATA[${url}]]></Tracking>`).join('\n')
         ).join('\n')}
       </Extension>
     `).join('\n');
@@ -31,7 +31,7 @@ class VastService {
         <CreativeExtension type="InteractiveCreativeFile">
           <![CDATA[${JSON.stringify({
             version: "1.0",
-            elements: elements.map(el => ({
+            elements: elements.map((el: VastConfig['interactiveElements'][0]) => ({
               type: el.type,
               position: el.position,
               size: el.size,
@@ -46,14 +46,14 @@ class VastService {
 
   private generateTrackingEvents(events: VastConfig['trackingEvents']): string {
     return Object.entries(events)
-      .filter(([_, urls]) => urls && urls.length > 0)
-      .map(([event, urls]) => 
-        urls!.map(url => `<Tracking event="${event}"><![CDATA[${url}]]></Tracking>`).join('\n')
+      .filter(([_, urls]: [string, string[] | undefined]) => urls && urls.length > 0)
+      .map(([event, urls]: [string, string[] | undefined]) => 
+        urls!.map((url: string) => `<Tracking event="${event}"><![CDATA[${url}]]></Tracking>`).join('\n')
       ).join('\n');
   }
 
   private generateMediaFiles(files: VastConfig['mediaFiles']): string {
-    return files.map(file => `
+    return files.map((file: VastConfig['mediaFiles'][0]) => `
       <MediaFile 
         delivery="${file.delivery}" 
         type="${file.type}" 
@@ -120,7 +120,7 @@ class VastService {
     if (!config.impressionUrls?.length) errors.push('Se requiere al menos una URL de impresión');
 
     // Validar archivos de medios
-    config.mediaFiles?.forEach((file, index) => {
+    config.mediaFiles?.forEach((file: VastConfig['mediaFiles'][0], index: number) => {
       if (!file.url) errors.push(`MediaFile ${index}: URL es requerida`);
       if (!file.type) errors.push(`MediaFile ${index}: Tipo de contenido es requerido`);
       if (!file.width || !file.height) errors.push(`MediaFile ${index}: Dimensiones son requeridas`);
@@ -128,7 +128,7 @@ class VastService {
     });
 
     // Validar elementos interactivos
-    config.interactiveElements?.forEach((element, index) => {
+    config.interactiveElements?.forEach((element: VastConfig['interactiveElements'][0], index: number) => {
       if (!element.type) errors.push(`Elemento interactivo ${index}: Tipo es requerido`);
       if (!element.position || typeof element.position.x !== 'number' || typeof element.position.y !== 'number') {
         errors.push(`Elemento interactivo ${index}: Posición inválida`);

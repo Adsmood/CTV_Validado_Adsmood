@@ -157,6 +157,7 @@ export const deleteCampaign = async (req: Request, res: Response<SuccessResponse
     });
 
     res.json({
+      data: undefined,
       message: 'Campaña eliminada exitosamente'
     });
   } catch (error) {

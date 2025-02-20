@@ -128,6 +128,7 @@ export const deleteProject = async (req: Request, res: Response<SuccessResponse<
     });
 
     res.json({
+      data: undefined,
       message: 'Proyecto eliminado exitosamente'
     });
   } catch (error) {
