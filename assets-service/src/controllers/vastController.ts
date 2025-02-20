@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { config } from '../config.js';
 import { cacheService } from '../services/cacheService.js';
+import { logger } from '../services/loggerService.js';
 
 interface VastParams {
   adId: string;
@@ -81,6 +82,7 @@ export const generateDynamicVast = async (req: Request, res: Response) => {
     // Verificar si existe en caché
     const cachedVast = cacheService.get(cacheKey);
     if (cachedVast) {
+      await logger.vastRequest(adId, queryParams, true);
       console.log('VAST encontrado en caché:', cacheKey);
       res.header('Content-Type', 'application/xml');
       res.header('Cache-Control', 'public, max-age=3600');
@@ -88,6 +90,8 @@ export const generateDynamicVast = async (req: Request, res: Response) => {
       res.send(cachedVast);
       return;
     }
+
+    await logger.vastRequest(adId, queryParams, false);
 
     // Configuración IAS
     const iasVerification = generateIASVerification({
@@ -161,7 +165,7 @@ export const generateDynamicVast = async (req: Request, res: Response) => {
 
     // Guardar en caché
     cacheService.set(cacheKey, vastXml);
-    console.log('VAST guardado en caché:', cacheKey);
+    await logger.info('VAST guardado en caché', { cacheKey, adId });
 
     // Configurar headers
     res.header('Content-Type', 'application/xml');
@@ -173,6 +177,7 @@ export const generateDynamicVast = async (req: Request, res: Response) => {
     res.send(vastXml);
 
   } catch (error) {
+    await logger.vastError(req.params.adId || 'unknown', error);
     console.error('Error generando VAST dinámico:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Error generando VAST',

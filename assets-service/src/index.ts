@@ -5,6 +5,7 @@ import compression from 'compression';
 import { config } from './config.js';
 import { uploadFile } from './controllers/uploadController.js';
 import { generateDynamicVast } from './controllers/vastController.js';
+import { getSystemStats } from './controllers/statsController.js';
 import { b2Service } from './services/b2Service.js';
 
 const app = express();
@@ -31,6 +32,9 @@ const upload = multer({
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+// Ruta de estadísticas
+app.get('/api/stats', getSystemStats);
 
 // Rutas
 app.post('/api/assets/upload', upload.single('file'), uploadFile);
