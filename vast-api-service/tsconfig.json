@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "types": ["node", "express", "jest"],
+    "types": ["node", "express"],
     "allowJs": true,
     "typeRoots": ["./node_modules/@types"],
     "lib": ["ES2020"],
