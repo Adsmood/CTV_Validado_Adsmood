@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: vast-api-service
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: |
+      npm install
+      npx prisma db push --accept-data-loss
+      npx prisma generate
+      npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://adsmood:YAjmmhachOa6G8sZpJyUQcvKNBMpgFfX@dpg-cuq79b2n91rc73ar4dqg-a.oregon-postgres.render.com/adsmood_ctv_ya5x
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
+      - key: ASSETS_SERVICE_URL
+        value: https://assets-service-hm83.onrender.com
+      - key: ALLOWED_ORIGINS
+        value: https://adsmood-ctv-ads-2025.onrender.com
+    autoDeploy: true
+    healthCheckPath: /health 
