@@ -25,18 +25,10 @@ const configSchema = z.object({
 export type Config = z.infer<typeof configSchema>;
 
 // Configuración
-export const config = configSchema.parse({
-  database: {
-    url: process.env.DATABASE_URL,
-  },
-  server: {
-    port: process.env.PORT || 3000,
-    nodeEnv: process.env.NODE_ENV || 'development',
-  },
-  services: {
-    assetsServiceUrl: process.env.ASSETS_SERVICE_URL,
-  },
-  cors: {
-    allowedOrigins: (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean),
-  },
-}); 
+export const config = {
+  port: process.env.PORT || 10000,
+  nodeEnv: process.env.NODE_ENV || 'development',
+  allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || ['*'],
+  databaseUrl: process.env.DATABASE_URL,
+  assetsServiceUrl: process.env.ASSETS_SERVICE_URL
+}; 
