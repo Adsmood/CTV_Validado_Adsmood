@@ -31,25 +31,25 @@ export const rateLimiter = (
   const requests = new Map<string, { count: number; resetTime: number }>();
 
   return (req: Request, res: Response, next: NextFunction) => {
-    const ip = req.ip;
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
     const now = Date.now();
     
     // Limpiar entradas expiradas
-    if (requests.has(ip)) {
-      const request = requests.get(ip)!;
+    if (requests.has(clientIp)) {
+      const request = requests.get(clientIp)!;
       if (now > request.resetTime) {
-        requests.delete(ip);
+        requests.delete(clientIp);
       }
     }
 
     // Inicializar o actualizar contador
-    if (!requests.has(ip)) {
-      requests.set(ip, {
+    if (!requests.has(clientIp)) {
+      requests.set(clientIp, {
         count: 1,
         resetTime: now + windowMs
       });
     } else {
-      const request = requests.get(ip)!;
+      const request = requests.get(clientIp)!;
       if (request.count >= maxRequests) {
         return res.status(429).json({
           error: 'Demasiadas solicitudes',

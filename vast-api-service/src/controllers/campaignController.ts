@@ -1,9 +1,20 @@
 import { Request, Response } from 'express';
-import { prisma } from '../services/prisma.js';
-import { vastService } from '../services/vastService.js';
-import { validationService } from '../services/validationService.js';
-import { analyticsService } from '../services/analyticsService.js';
-import type { Campaign, ErrorResponse, SuccessResponse } from '../types/index.js';
+import { prisma } from '../services/prisma';
+import { vastService } from '../services/vastService';
+import { validationService } from '../services/validationService';
+import { analyticsService } from '../services/analyticsService';
+import type { Campaign, ErrorResponse, SuccessResponse, VastConfig } from '../types/index';
+
+// Función auxiliar para transformar los datos de Prisma al tipo Campaign
+const transformPrismaCampaign = (prismaData: any): Campaign => {
+  return {
+    ...prismaData,
+    vastConfig: prismaData.vastConfig as VastConfig,
+    startDate: prismaData.startDate || null,
+    endDate: prismaData.endDate || null,
+    analytics: prismaData.analytics || []
+  };
+};
 
 export const getCampaigns = async (_req: Request, res: Response<SuccessResponse<Campaign[]> | ErrorResponse>) => {
   try {
@@ -15,7 +26,7 @@ export const getCampaigns = async (_req: Request, res: Response<SuccessResponse<
     });
 
     res.json({
-      data: campaigns
+      data: campaigns.map(transformPrismaCampaign)
     });
   } catch (error) {
     console.error('Error al obtener campañas:', error);
@@ -45,7 +56,7 @@ export const getCampaign = async (req: Request, res: Response<SuccessResponse<Ca
     }
 
     res.json({
-      data: campaign
+      data: transformPrismaCampaign(campaign)
     });
   } catch (error) {
     console.error('Error al obtener campaña:', error);
@@ -61,9 +72,16 @@ export const createCampaign = async (req: Request, res: Response<SuccessResponse
     const { projectId, name, videoUrl, vastConfig, status, startDate, endDate } = req.body;
 
     // Validaciones básicas
-    if (!projectId || !name || !videoUrl || !vastConfig) {
+    const errors = [];
+    if (!projectId) errors.push('El ID del proyecto es requerido');
+    if (!name) errors.push('El nombre es requerido');
+    if (!videoUrl) errors.push('La URL del video es requerida');
+    if (!vastConfig) errors.push('La configuración VAST es requerida');
+
+    if (errors.length > 0) {
       return res.status(400).json({
-        error: 'Faltan campos requeridos'
+        error: 'Faltan campos requeridos',
+        errors
       });
     }
 
@@ -72,7 +90,7 @@ export const createCampaign = async (req: Request, res: Response<SuccessResponse
     if (!vastValidation.isValid) {
       return res.status(400).json({
         error: 'Configuración VAST inválida',
-        details: vastValidation.errors
+        errors: vastValidation.errors
       });
     }
 
@@ -93,7 +111,9 @@ export const createCampaign = async (req: Request, res: Response<SuccessResponse
     });
 
     res.status(201).json({
-      data: campaign,
+      id: campaign.id,
+      name: campaign.name,
+      data: transformPrismaCampaign(campaign),
       message: 'Campaña creada exitosamente'
     });
   } catch (error) {
@@ -138,7 +158,7 @@ export const updateCampaign = async (req: Request, res: Response<SuccessResponse
     });
 
     res.json({
-      data: campaign,
+      data: transformPrismaCampaign(campaign),
       message: 'Campaña actualizada exitosamente'
     });
   } catch (error) {
@@ -188,12 +208,11 @@ export const getCampaignVast = async (req: Request, res: Response) => {
     // Registrar impresión
     await analyticsService.trackEvent(id, 'impression');
 
-    // Generar VAST XML
-    const vastXml = vastService.generateVastXml(campaign);
+    // Generar XML VAST
+    const vastXml = vastService.generateVastXml(transformPrismaCampaign(campaign));
 
-    // Configurar headers
+    // Enviar respuesta XML
     res.header('Content-Type', 'application/xml');
-    res.header('Cache-Control', 'no-cache');
     res.send(vastXml);
   } catch (error) {
     console.error('Error al generar VAST:', error);

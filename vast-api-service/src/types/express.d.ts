@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import { Project } from '@prisma/client';
 
 declare global {
   namespace Express {
@@ -12,6 +13,7 @@ declare global {
         campaignId: string;
         hash: string;
       };
+      project?: Project;
     }
   }
 } 

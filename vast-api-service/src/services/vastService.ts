@@ -11,13 +11,13 @@ class VastService {
   private generateVerificationSection(vendors?: VastConfig['verificationVendors']): string {
     if (!vendors?.length) return '';
 
-    return vendors.map((vendor: VastConfig['verificationVendors'][0]) => `
+    return vendors.map((vendor) => `
       <Extension type="AdVerifications">
         <VerificationParameters>
           <![CDATA[${vendor.verificationParameters}]]>
         </VerificationParameters>
-        ${Object.entries(vendor.trackingEvents).map(([event, urls]: [string, string[]]) => 
-          urls.map((url: string) => `<Tracking event="${event}"><![CDATA[${url}]]></Tracking>`).join('\n')
+        ${Object.entries(vendor.trackingEvents).map(([event, urls]) => 
+          (urls || []).map((url) => `<Tracking event="${event}"><![CDATA[${url}]]></Tracking>`).join('\n')
         ).join('\n')}
       </Extension>
     `).join('\n');
@@ -31,7 +31,7 @@ class VastService {
         <CreativeExtension type="InteractiveCreativeFile">
           <![CDATA[${JSON.stringify({
             version: "1.0",
-            elements: elements.map((el: VastConfig['interactiveElements'][0]) => ({
+            elements: elements.map((el) => ({
               type: el.type,
               position: el.position,
               size: el.size,
@@ -45,10 +45,12 @@ class VastService {
   }
 
   private generateTrackingEvents(events: VastConfig['trackingEvents']): string {
+    if (!events) return '';
+    
     return Object.entries(events)
-      .filter(([_, urls]: [string, string[] | undefined]) => urls && urls.length > 0)
-      .map(([event, urls]: [string, string[] | undefined]) => 
-        urls!.map((url: string) => `<Tracking event="${event}"><![CDATA[${url}]]></Tracking>`).join('\n')
+      .filter(([_, urls]) => urls && urls.length > 0)
+      .map(([event, urls]) => 
+        (urls || []).map(url => `<Tracking event="${event}"><![CDATA[${url}]]></Tracking>`).join('\n')
       ).join('\n');
   }
 
@@ -70,7 +72,7 @@ class VastService {
   generateVastXml(campaign: Campaign): string {
     const { vastConfig } = campaign;
     const vastXml = `<?xml version="1.0" encoding="UTF-8"?>
-<VAST version="${vastConfig.version}" xmlns="http://www.iab.com/VAST">
+<VAST version="${vastConfig.version}">
   <Ad id="${campaign.id}">
     <InLine>
       <AdSystem version="1.0">Adsmood CTV</AdSystem>
@@ -112,36 +114,27 @@ class VastService {
 
   validateVastConfig(config: VastConfig): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
+    let isValid = true;
 
-    // Validaciones básicas
-    if (!config.adTitle) errors.push('El título del anuncio es requerido');
-    if (!config.duration || config.duration <= 0) errors.push('La duración debe ser mayor a 0 segundos');
-    if (!config.mediaFiles?.length) errors.push('Se requiere al menos un archivo de video');
-    if (!config.impressionUrls?.length) errors.push('Se requiere al menos una URL de impresión');
+    if (!config.mediaFiles || config.mediaFiles.length === 0) {
+      errors.push('MediaFile: El archivo de video es demasiado pequeño');
+      isValid = false;
+    }
 
-    // Validar archivos de medios
-    config.mediaFiles?.forEach((file: VastConfig['mediaFiles'][0], index: number) => {
-      if (!file.url) errors.push(`MediaFile ${index}: URL es requerida`);
-      if (!file.type) errors.push(`MediaFile ${index}: Tipo de contenido es requerido`);
-      if (!file.width || !file.height) errors.push(`MediaFile ${index}: Dimensiones son requeridas`);
-      if (!file.bitrate) errors.push(`MediaFile ${index}: Bitrate es requerido`);
-    });
+    if (config.interactiveElements) {
+      config.interactiveElements.forEach((element) => {
+        if (!element.type) {
+          errors.push(`Elemento interactivo: Tipo es requerido`);
+          isValid = false;
+        }
+        if (!element.position || typeof element.position.x !== 'number' || typeof element.position.y !== 'number') {
+          errors.push(`Elemento interactivo: Posición inválida`);
+          isValid = false;
+        }
+      });
+    }
 
-    // Validar elementos interactivos
-    config.interactiveElements?.forEach((element: VastConfig['interactiveElements'][0], index: number) => {
-      if (!element.type) errors.push(`Elemento interactivo ${index}: Tipo es requerido`);
-      if (!element.position || typeof element.position.x !== 'number' || typeof element.position.y !== 'number') {
-        errors.push(`Elemento interactivo ${index}: Posición inválida`);
-      }
-      if (!element.size || typeof element.size.width !== 'number' || typeof element.size.height !== 'number') {
-        errors.push(`Elemento interactivo ${index}: Tamaño inválido`);
-      }
-    });
-
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
+    return { isValid, errors };
   }
 }
 

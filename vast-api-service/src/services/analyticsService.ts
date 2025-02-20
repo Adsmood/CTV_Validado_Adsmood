@@ -1,4 +1,4 @@
-import { prisma } from './prisma.js';
+import { prisma } from './prisma';
 import type { Analytics } from '../types/index.js';
 
 class AnalyticsService {
@@ -17,13 +17,13 @@ class AnalyticsService {
       const event = await prisma.analytics.create({
         data: {
           campaignId,
-          eventType,
+          eventType: eventType as Analytics['eventType'],
           metadata: metadata || {},
           timestamp: new Date()
         }
       });
 
-      return event;
+      return event as Analytics;
     } catch (error) {
       console.error('Error al registrar evento:', error);
       throw error;

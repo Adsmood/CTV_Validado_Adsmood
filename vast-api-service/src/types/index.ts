@@ -72,9 +72,12 @@ export interface VastConfig {
 export interface ErrorResponse {
   error: string;
   details?: any;
+  errors?: string[];
 }
 
 export interface SuccessResponse<T> {
   data: T;
   message?: string;
+  id?: string;
+  name?: string;
 } 

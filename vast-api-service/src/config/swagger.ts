@@ -1,5 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
-import { version } from '../../package.json';
+
+const version = '1.0.0'; // Versión hardcodeada para evitar problemas con la importación del package.json
 
 const options: swaggerJsdoc.Options = {
   definition: {
