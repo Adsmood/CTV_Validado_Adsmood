@@ -1,22 +1,48 @@
 services:
+  # Frontend (Static Site)
   - type: web
-    name: assets-service
-    env: node
-    rootDirectory: assets-service
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    name: ctv-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
-      - key: B2_APPLICATION_KEY_ID
-        value: 005ff4da1ff302a0000000002
-      - key: B2_APPLICATION_KEY
-        value: K0057A6SzCLovuE8SUjN36SIGAARdXc
-      - key: B2_BUCKET_ID
-        value: ef1f24bd7af10fef9350021a
-      - key: B2_FILE_URL
-        value: https://f005.backblazeb2.com/file/CTVAds
-      - key: PORT
-        value: 10000
-      - key: NODE_ENV
-        value: production
-      - key: ALLOWED_ORIGINS
-        value: https://assets-service-hm83.onrender.com,https://adsmood-ctv-ads-2025.onrender.com 
+      - key: NODE_VERSION
+        value: 18.0.0
+
+  # Assets Service
+  - type: web
+    name: ctv-assets-service
+    env: node
+    buildCommand: cd assets-service && npm install && npm run build
+    startCommand: cd assets-service && npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.0.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: adsmood_ctv_ya5x
+          property: connectionString
+
+  # VAST API Service
+  - type: web
+    name: ctv-vast-api
+    env: node
+    buildCommand: cd vast-api-service && npm install && npm run build
+    startCommand: cd vast-api-service && npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.0.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: adsmood_ctv_ya5x
+          property: connectionString
+
+databases:
+  - name: adsmood_ctv_ya5x
+    databaseName: adsmood_ctv_ya5x
+    user: adsmood
+    plan: free 

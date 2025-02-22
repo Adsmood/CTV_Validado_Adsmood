@@ -1,4 +1,7 @@
 import { Router } from 'express';
+import { z } from 'zod';
+import { PrismaClient } from '@prisma/client';
+import { AppError } from '../middleware/errorHandler';
 import {
   getProjects,
   getProject,
@@ -8,6 +11,13 @@ import {
 } from '../controllers/projectController.js';
 
 const router = Router();
+const prisma = new PrismaClient();
+
+// Esquema de validación para proyectos
+const ProjectSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
+});
 
 /**
  * @swagger
@@ -208,4 +218,18 @@ router.put('/:id', updateProject);
  */
 router.delete('/:id', deleteProject);
 
-export default router; 
+// GET /api/projects/:id/ads
+router.get('/:id/ads', async (req, res, next) => {
+  try {
+    const ads = await prisma.ad.findMany({
+      where: {
+        projectId: req.params.id,
+      },
+    });
+    res.json(ads);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export { router as projectRoutes }; 

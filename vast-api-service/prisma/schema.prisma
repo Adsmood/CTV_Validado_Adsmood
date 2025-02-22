@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,39 +10,38 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Modelo para los proyectos de anuncios
 model Project {
-  id          String    @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   description String?
-  apiKey      String    @unique
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  campaigns   Campaign[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ads         Ad[]
 }
 
-model Campaign {
-  id          String    @id @default(uuid())
+// Modelo para los anuncios individuales
+model Ad {
+  id          String   @id @default(uuid())
   projectId   String
   name        String
-  videoUrl    String
-  vastConfig  Json
-  status      String    @default("draft") // draft, active, paused, completed
-  startDate   DateTime?
-  endDate     DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  project     Project   @relation(fields: [projectId], references: [id])
-  analytics   Analytics[]
+  description String?
+  vastXml     String   // XML VAST generado
+  config      Json     // Configuración del anuncio (elementos interactivos, timeline, etc.)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id])
+
+  @@index([projectId])
 }
 
-model Analytics {
-  id          String    @id @default(uuid())
-  campaignId  String
-  eventType   String    // impression, start, complete, etc.
-  timestamp   DateTime  @default(now())
-  metadata    Json?
-  campaign    Campaign  @relation(fields: [campaignId], references: [id])
+// Modelo para el tracking de eventos
+model TrackingEvent {
+  id        String   @id @default(uuid())
+  adId      String
+  type      String   // impression, click, complete, etc.
+  url       String   // URL del tracking
+  timestamp DateTime @default(now())
 
-  @@index([campaignId, eventType])
-  @@index([timestamp])
+  @@index([adId])
 } 

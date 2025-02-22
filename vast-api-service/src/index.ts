@@ -1,31 +1,32 @@
 import express from 'express';
 import cors from 'cors';
-import { config } from './config/config.js';
-import router from './routes/index.js';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import { config } from './config';
+import { errorHandler } from './middleware/errorHandler';
+import { vastRoutes } from './routes/vast';
+import { projectRoutes } from './routes/project';
 import { prisma } from './services/prisma.js';
-import { app } from './app';
 
-const PORT = process.env.PORT || 3000;
+const app = express();
 
-// Middleware
-app.use(cors({
-  origin: config.cors.allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
-
+// Middlewares
+app.use(helmet());
+app.use(cors());
 app.use(express.json());
+app.use(morgan('dev'));
 
 // Rutas
-app.use('/api', router);
+app.use('/api/vast', vastRoutes);
+app.use('/api/projects', projectRoutes);
 
-// Manejo de errores global
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error('Error no manejado:', err);
-  res.status(500).json({
-    error: 'Error interno del servidor',
-    details: err.message
-  });
+// Manejador de errores
+app.use(errorHandler);
+
+// Iniciar servidor
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor VAST API corriendo en el puerto ${PORT}`);
 });
 
 async function startServer() {
